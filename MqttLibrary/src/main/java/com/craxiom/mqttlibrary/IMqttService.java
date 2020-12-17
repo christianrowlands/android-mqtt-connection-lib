@@ -2,7 +2,6 @@ package com.craxiom.mqttlibrary;
 
 import com.craxiom.mqttlibrary.connection.BrokerConnectionInfo;
 import com.craxiom.mqttlibrary.connection.ConnectionState;
-import com.craxiom.mqttlibrary.connection.DefaultMqttConnection;
 
 /**
  * A contract for services that utilize an MQTT connection.
@@ -16,14 +15,14 @@ public interface IMqttService
      *
      * @param connectionStateListener The connection state listener.
      */
-    public void registerMqttConnectionStateListener(IConnectionStateListener connectionStateListener);
+    void registerMqttConnectionStateListener(IConnectionStateListener connectionStateListener);
 
     /**
      * Unregisters the given {@link IConnectionStateListener} from the service.
      *
      * @param connectionStateListener The connection state listener.
      */
-    public void unregisterMqttConnectionStateListener(IConnectionStateListener connectionStateListener);
+    void unregisterMqttConnectionStateListener(IConnectionStateListener connectionStateListener);
 
     /**
      * If connection information is specified for an MQTT Broker via the MDM Managed Configuration, then kick off an
@@ -35,22 +34,22 @@ public interface IMqttService
      *                        that case, the connection info will be null but we still want to disconnect from the MQTT
      *                        broker.
      */
-    public void attemptMqttConnectWithMdmConfig(boolean forceDisconnect);
+    void attemptMqttConnectWithMdmConfig(boolean forceDisconnect);
 
     /**
      * Connect to an MQTT broker.
      *
      * @param brokerConnectionInfo The information needed to connect to the MQTT broker.
      */
-    public void connectToMqttBroker(BrokerConnectionInfo brokerConnectionInfo);
+    void connectToMqttBroker(BrokerConnectionInfo brokerConnectionInfo);
 
     /**
      * Disconnect from the MQTT broker.
      */
-    public void disconnectFromMqttBroker();
+    void disconnectFromMqttBroker();
 
     /**
      * @return The current connection state to the MQTT Broker.
      */
-    public ConnectionState getMqttConnectionState();
+    ConnectionState getMqttConnectionState();
 }

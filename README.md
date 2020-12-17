@@ -18,4 +18,4 @@ It is important to note that the pieces provided in the library cannot stand on 
 ![Example UI](screenshots/additional_fields.png "Example Connection UI With Additional Fields")
 
 ## Contact
-Eliza Alcaraz <ealcaraz@ctic.us>
+* **Eliza Alcaraz** - [eliza-mae-alcaraz](https://github.com/eliza-mae-alcaraz)
