@@ -15,5 +15,7 @@ It is important to note that the pieces provided in the library cannot stand on 
 4. The `IMqttService` implementation should ideally include a `DefaultMqttConnection`, which will perform connection/disconnection.
 5. Additionally, the `BrokerConnectionInfo` holds relevant information in order to successfully make an MQTT connection. It is important to note that one should extend this class if additional fields are needed and these fields should correspond to the additional fragment UI components, if any.
 
+![Example UI](screenshots/additional_fields.png "Example Connection UI With Additional Fields")
+
 ## Contact
 Eliza Alcaraz <ealcaraz@ctic.us>
