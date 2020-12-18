@@ -61,8 +61,9 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     compileOnly 'com.google.android.things:androidthings:1.0'
 
-    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
-    implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
+    api 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+    api 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
+
     implementation "com.google.protobuf:protobuf-java-util:3.11.4"
     implementation 'com.jakewharton.timber:timber:4.7.1'
 }
@@ -88,6 +89,7 @@ publishing {
                         url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/blob/master/LICENSE'
                     }
                 }
+
                 developers {
                     developer {
                         id = 'christianrowlands'
@@ -95,14 +97,28 @@ publishing {
                         email = 'christian.rowlands@gmail.com'
                     }
                 }
+
                 scm {
                     url = 'https://github.com/christianrowlands/android-mqtt-connection-lib'
                     connection = 'scm:git:git://github.com/christianrowlands/android-mqtt-connection-lib.git'
                     developerConnection = 'scm:git:ssh://git@github.com:christianrowlands/android-mqtt-connection-lib.git'
                 }
+
                 issueManagement {
                     system = 'GitHub'
                     url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/issues'
+                }
+
+                withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+
+                    // Iterate over the api dependencies to add a dependency node for each
+                    configurations.api.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
                 }
             }
         }

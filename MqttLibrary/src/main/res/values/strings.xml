@@ -25,6 +25,7 @@
 
     <string name="mqtt_mdm_override_description">Your MQTT connection settings have been set by a Mobile Device Management server.  Toggle the switch below to override those settings so you can specify your own MQTT Broker connection information.</string>
     <string name="mqtt_mdm_override_title">Override MDM MQTT Settings</string>
-    <string name="auto_start_cellular_logging_summary_on">Cellular logging will be started upon app opening</string>
-    <string name="auto_start_cellular_logging_summary_off">Cellular logging will only start when manually enabled</string>
+    <string name="mdm_override_title">MDM Override</string>
+    <string name="mqtt_mdm_override_summary_on">MDM control is on, but now some of the MDM settings can be overridden</string>
+    <string name="mqtt_mdm_override_summary_off">MDM control is on</string>
 </resources>
