@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import timber.log.Timber;
 
 /**
- * Abstract class for creating a connection to an MQTT server. Typically this will be a field within
+ * Class for creating a connection to an MQTT server. Typically this will be a field within
  * the {@link com.craxiom.mqttlibrary.IMqttService}, and is used to connect/disconnect to an MQTT
  * server via {@link com.craxiom.mqttlibrary.IMqttService#connectToMqttBroker(BrokerConnectionInfo)}
  * and {@link IMqttService#disconnectFromMqttBroker()} respectively.
