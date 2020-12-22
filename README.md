@@ -3,7 +3,7 @@
 ## What is it?
 The MQTT Connection Library provides a simple connection UI as well as logic to perform an MQTT connection in an Android app. If additional options are needed for the connection (beyond the provided), there is a capability that can be utilized. Please read Development Instructions for more detail.
 
-## Development Instructions
+## How to Use this Library
 It is important to note that the pieces provided in the library cannot stand on their own. Most classes are to be extended or implemented, as an "MQTT Connection" relies on a service that drives the logic using the connection. We will go over the correct way to wire everything together below.
 1. Ensure that the correct version of the library is included in the consuming project's `build.gradle` file, under its dependencies:<br><br>
    ```
@@ -16,6 +16,15 @@ It is important to note that the pieces provided in the library cannot stand on 
 5. Additionally, the `BrokerConnectionInfo` holds relevant information in order to successfully make an MQTT connection. It is important to note that one should extend this class if additional fields are needed and these fields should correspond to the additional fragment UI components, if any.
 
 ![Example UI](screenshots/additional_fields.png "Example Connection UI With Additional Fields")
+
+## Build Instructions
+ - Execute `gradlew build` in the root directory to produce the Android AAR library.
+ - Execute `gradlew publishToMavenLocal` in the root directory to publish the artifacts to the local Maven cache.
+
+
+## Change log
+##### [0.1.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.1.0) - 2020-12-22
+ * Initial release of this Android MQTT Connection Library.
 
 ## Contact
 * **Eliza Alcaraz** - [eliza-mae-alcaraz](https://github.com/eliza-mae-alcaraz)

@@ -38,8 +38,6 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/x_small_margin"
                     android:defaultValue="false"
-                    android:summaryOff="@string/auto_start_cellular_logging_summary_off"
-                    android:summaryOn="@string/auto_start_cellular_logging_summary_on"
                     android:text="@string/mqtt_mdm_override_title"
                     android:textAppearance="@style/LabelText" />
 
