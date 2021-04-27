@@ -6,17 +6,18 @@ import com.craxiom.mqttlibrary.IConnectionStateListener;
 import com.craxiom.mqttlibrary.IMqttService;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
-
-import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3Client;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3ClientBuilder;
+import com.hivemq.client.mqtt.mqtt3.message.auth.Mqtt3SimpleAuth;
+import com.hivemq.client.mqtt.mqtt3.message.auth.Mqtt3SimpleAuthBuilder;
+import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAck;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 import timber.log.Timber;
 
@@ -28,6 +29,7 @@ import timber.log.Timber;
  *
  * @since 0.1.0
  */
+@SuppressWarnings("unused")
 public class DefaultMqttConnection
 {
     /**
@@ -39,9 +41,11 @@ public class DefaultMqttConnection
     private final List<IConnectionStateListener> mqttConnectionListeners = new CopyOnWriteArrayList<>();
 
     private volatile ConnectionState connectionState = ConnectionState.DISCONNECTED;
-    private MqttAndroidClient mqttAndroidClient;
+    private Mqtt3AsyncClient mqtt3Client;
 
     protected String mqttClientId;
+    private CompletableFuture<Mqtt3ConnAck> connectFuture;
+    private volatile boolean userCanceled = false;
 
     protected DefaultMqttConnection()
     {
@@ -55,24 +59,62 @@ public class DefaultMqttConnection
      *
      * @param applicationContext The context to use for the MQTT Android Client.
      */
+    @SuppressWarnings("NonPrivateFieldAccessedInSynchronizedContext")
     public synchronized void connect(Context applicationContext, BrokerConnectionInfo connectionInfo)
     {
         try
         {
+            userCanceled = false;
             mqttClientId = connectionInfo.getMqttClientId();
-            mqttAndroidClient = new MqttAndroidClient(applicationContext, connectionInfo.getMqttServerUri(), mqttClientId);
-            mqttAndroidClient.setCallback(new MyMqttCallbackExtended(this));
 
             final String username = connectionInfo.getMqttUsername();
             final String password = connectionInfo.getMqttPassword();
 
-            final MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
-            mqttConnectOptions.setAutomaticReconnect(true);
-            mqttConnectOptions.setCleanSession(false);
-            if (username != null) mqttConnectOptions.setUserName(username);
-            if (password != null) mqttConnectOptions.setPassword(password.toCharArray());
+            final Mqtt3ClientBuilder mqtt3ClientBuilder = Mqtt3Client.builder().identifier(mqttClientId);
 
-            mqttAndroidClient.connect(mqttConnectOptions, null, new MyMqttActionListener(this));
+            if (username != null || password != null)
+            {
+                Mqtt3SimpleAuthBuilder authBuilder = Mqtt3SimpleAuth.builder();
+                if (username != null)
+                {
+                    final Mqtt3SimpleAuthBuilder.Complete authBuilderComplete = authBuilder.username(username);
+                    if (password != null) authBuilderComplete.password(password.getBytes());
+
+                    mqtt3ClientBuilder.simpleAuth(authBuilderComplete.build());
+                }
+            }
+
+            if (connectionInfo.isTlsEnabled()) mqtt3ClientBuilder.sslWithDefaultConfig();
+
+            mqtt3ClientBuilder.serverHost(connectionInfo.getMqttBrokerHost())
+                    .serverPort(connectionInfo.getPortNumber())
+                    .automaticReconnect().maxDelay(60, TimeUnit.SECONDS).applyAutomaticReconnect()
+
+                    .addConnectedListener(context -> {
+                        Timber.i("MQTT Broker Connected!!!!");
+                        notifyConnectionStateChange(ConnectionState.CONNECTED);
+                    })
+
+                    .addDisconnectedListener(context -> {
+                        final MqttDisconnectSource source = context.getSource();
+                        Timber.d(context.getCause(), "MQTT Broker disconnected. source=%s", source);
+                        if (userCanceled)
+                        {
+                            notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                            Timber.d("Force stopping the reconnect attempts because the user toggled the connection off");
+                            context.getReconnector().reconnect(false);
+                        } else if (source == MqttDisconnectSource.USER)
+                        {
+                            notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                        } else
+                        {
+                            notifyConnectionStateChange(ConnectionState.CONNECTING);
+                        }
+                    });
+
+            mqtt3Client = mqtt3ClientBuilder.buildAsync();
+
+            connectFuture = mqtt3Client.connect();
         } catch (Exception e)
         {
             Timber.e(e, "Unable to create the connection to the MQTT broker");
@@ -86,19 +128,29 @@ public class DefaultMqttConnection
      */
     public synchronized void disconnect()
     {
-        if (mqttAndroidClient != null)
+        userCanceled = true;
+
+        if (mqtt3Client != null)
         {
             try
             {
-                final IMqttToken token = mqttAndroidClient.disconnect(DISCONNECT_TIMEOUT);
-                token.waitForCompletion(DISCONNECT_TIMEOUT);  // Wait for completion so that we don't initiate a new connection while waiting for this disconnect.
+                if (connectFuture != null && !connectFuture.isDone())
+                {
+                    Timber.i("Canceling the currently connecting connection using the future");
+                    connectFuture.cancel(true);
+                }
+
+                // Just in case the connection completed between calling isDone() and cancel(), we go through the disconnect to be sure
+                final CompletableFuture<Void> disconnect = mqtt3Client.disconnect();
+                disconnect.whenComplete((aVoid, throwable) -> {
+                    Timber.d(throwable, "The MQTT disconnect request completed");
+                    notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                });
             } catch (Exception e)
             {
                 Timber.e(e, "An exception occurred when disconnecting from the MQTT broker");
             }
         }
-
-        notifyConnectionStateChange(ConnectionState.DISCONNECTED);
     }
 
     /**
@@ -123,7 +175,10 @@ public class DefaultMqttConnection
         {
             final String messageJson = jsonFormatter.print(message);
 
-            mqttAndroidClient.publish(mqttMessageTopic, new MqttMessage(messageJson.getBytes()));
+            if (mqtt3Client.getState().isConnected())
+            {
+                mqtt3Client.publishWith().topic(mqttMessageTopic).payload(messageJson.getBytes()).send();
+            }
         } catch (Exception e)
         {
             Timber.e(e, "Caught an exception when trying to send an MQTT message");
@@ -170,88 +225,6 @@ public class DefaultMqttConnection
             {
                 Timber.e(e, "Unable to notify a MQTT Connection State Listener because of an exception");
             }
-        }
-    }
-
-    /**
-     * Listener for the overall MQTT client.  This listener gets notified for any events that happen such as connection
-     * success or lost events, message delivery receipts, or notifications of new incoming messages.
-     */
-    private static class MyMqttCallbackExtended implements MqttCallbackExtended
-    {
-        private final DefaultMqttConnection mqttConnection;
-
-        MyMqttCallbackExtended(DefaultMqttConnection mqttConnection)
-        {
-            this.mqttConnection = mqttConnection;
-        }
-
-        @Override
-        public void connectComplete(boolean reconnect, String serverURI)
-        {
-            mqttConnection.notifyConnectionStateChange(ConnectionState.CONNECTED);
-            if (reconnect)
-            {
-                Timber.i("Reconnect to: %s", serverURI);
-            } else
-            {
-                Timber.i("Connected to: %s", serverURI);
-            }
-        }
-
-        @Override
-        public void connectionLost(Throwable cause)
-        {
-            Timber.w(cause, "Connection lost: ");
-
-            // As best I can tell, the connection lost method is called for all connection lost scenarios, including
-            // when the user manually stops the connection.  If the user manually stopped the connection the cause seems
-            // to be null, so don't indicate that we are trying to reconnect.
-            if (cause != null)
-            {
-                mqttConnection.notifyConnectionStateChange(ConnectionState.CONNECTING);
-            }
-        }
-
-        @Override
-        public void messageArrived(String topic, MqttMessage message)
-        {
-            Timber.i("Message arrived: Topic=%s, MQTT Message=%s", topic, message);
-        }
-
-        @Override
-        public void deliveryComplete(IMqttDeliveryToken token)
-        {
-        }
-    }
-
-    /**
-     * Listener that can be used when connecting to the MQTT Broker.  We will get notified if the connection succeeds
-     * or fails.
-     * <p>
-     * Callbacks occur on the MQTT Client Thread, so don't do any long running operations in the listener methods.
-     */
-    private static class MyMqttActionListener implements IMqttActionListener
-    {
-        private final DefaultMqttConnection mqttConnection;
-
-        MyMqttActionListener(DefaultMqttConnection mqttConnection)
-        {
-            this.mqttConnection = mqttConnection;
-        }
-
-        @Override
-        public void onSuccess(IMqttToken asyncActionToken)
-        {
-            Timber.i("MQTT Broker Connected!!!!");
-            mqttConnection.notifyConnectionStateChange(ConnectionState.CONNECTED);
-        }
-
-        @Override
-        public void onFailure(IMqttToken asyncActionToken, Throwable exception)
-        {
-            Timber.e(exception, "Failed to connect");
-            mqttConnection.notifyConnectionStateChange(ConnectionState.CONNECTING);
         }
     }
 }

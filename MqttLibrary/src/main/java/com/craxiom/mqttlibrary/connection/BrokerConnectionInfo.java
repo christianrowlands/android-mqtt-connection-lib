@@ -12,7 +12,9 @@ public class BrokerConnectionInfo
     private static final String SSL_URI_PREFIX = "ssl://";
     private static final String TCP_URI_PREFIX = "tcp://";
 
-    private final String mqttServerUri;
+    private final String mqttBrokerHost;
+    private final int portNumber;
+    private final boolean tlsEnabled;
     private final String mqttClientId;
     private final String mqttUsername;
     private final String mqttPassword;
@@ -31,25 +33,17 @@ public class BrokerConnectionInfo
      */
     public BrokerConnectionInfo(String mqttBrokerHost, int portNumber, boolean tlsEnabled, String mqttClientId, String mqttUsername, String mqttPassword)
     {
-        this(getMqttBrokerUriString(mqttBrokerHost, portNumber, tlsEnabled), mqttClientId, mqttUsername, mqttPassword);
-    }
+        this.mqttBrokerHost = mqttBrokerHost;
+        this.portNumber = portNumber;
+        this.tlsEnabled = tlsEnabled;
 
-    /**
-     * Constructs this info object with all the information needed to connect to an MQTT Broker.
-     *
-     * @param mqttServerUri The full URI including the connection protocol (e.g. "ssl://") and the port number at the end.
-     * @param mqttClientId  The client ID that is used to represent this client to the server.
-     * @param mqttUsername  The username used to authenticate to the MQTT Broker.
-     * @param mqttPassword  The password used to authenticate to the MQTT Broker.
-     */
-    public BrokerConnectionInfo(String mqttServerUri, String mqttClientId, String mqttUsername, String mqttPassword)
-    {
-        this.mqttServerUri = mqttServerUri;
         this.mqttClientId = mqttClientId;
         this.mqttUsername = mqttUsername;
         this.mqttPassword = mqttPassword;
 
-        int result = mqttServerUri != null ? mqttServerUri.hashCode() : 0;
+        int result = mqttBrokerHost != null ? mqttBrokerHost.hashCode() : 0;
+        result = 31 * result + portNumber;
+        result = 31 * result + (tlsEnabled ? 1 : 0);
         result = 31 * result + (mqttClientId != null ? mqttClientId.hashCode() : 0);
         result = 31 * result + (mqttUsername != null ? mqttUsername.hashCode() : 0);
         result = 31 * result + (mqttPassword != null ? mqttPassword.hashCode() : 0);
@@ -64,7 +58,9 @@ public class BrokerConnectionInfo
 
         BrokerConnectionInfo that = (BrokerConnectionInfo) o;
 
-        if (!Objects.equals(mqttServerUri, that.mqttServerUri)) return false;
+        if (portNumber != that.portNumber) return false;
+        if (tlsEnabled != that.tlsEnabled) return false;
+        if (!Objects.equals(mqttBrokerHost, that.mqttBrokerHost)) return false;
         if (!Objects.equals(mqttClientId, that.mqttClientId)) return false;
         if (!Objects.equals(mqttUsername, that.mqttUsername)) return false;
         return Objects.equals(mqttPassword, that.mqttPassword);
@@ -76,9 +72,19 @@ public class BrokerConnectionInfo
         return hashCode;
     }
 
-    public String getMqttServerUri()
+    public String getMqttBrokerHost()
     {
-        return mqttServerUri;
+        return mqttBrokerHost;
+    }
+
+    public int getPortNumber()
+    {
+        return portNumber;
+    }
+
+    public boolean isTlsEnabled()
+    {
+        return tlsEnabled;
     }
 
     public String getMqttClientId()

@@ -4,8 +4,4 @@
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- To monitor changes to the network state -->
-
-    <application>
-        <service android:name="org.eclipse.paho.android.service.MqttService" />
-    </application>
 </manifest>
