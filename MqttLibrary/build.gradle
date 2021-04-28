@@ -5,7 +5,7 @@
 //   gradle addCredentials --key sonatypePassword --value <password>
 //   gradle addCredentials --key sonatypeKeyPassword --value <password>
 //
-// From there, execute `./gradlew clean build publish` to build, sign, and upload all the artifacts.
+// From there, execute `./gradlew clean build publishReleasePublicationToMavenRepository` to build, sign, and upload all the artifacts.
 // The final step is to log in to https://oss.sonatype.org/#stagingRepositories to close and release the staging repo
 
 plugins {
@@ -16,7 +16,7 @@ plugins {
 }
 
 group 'com.craxiom'
-version '0.2.0-SNAPSHOT'
+version '0.2.0'
 
 android {
     compileSdkVersion 29
@@ -60,88 +60,101 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.3.0'
-    testImplementation 'junit:junit:4.13.1'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     compileOnly 'com.google.android.things:androidthings:1.0'
 
-    api 'com.hivemq:hivemq-mqtt-client:1.2.2'
+    implementation 'com.hivemq:hivemq-mqtt-client:1.2.2'
 
     implementation "com.google.protobuf:protobuf-java-util:3.15.3"
     implementation 'com.jakewharton.timber:timber:4.7.1'
+
+    testImplementation 'junit:junit:4.13.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }
 
-configurations.maybeCreate("default")
-def publishArtifact = artifacts.add("default", file('build/outputs/aar/MqttLibrary-debug.aar'))
-
 // Configure publishing to the Sonatype Maven Central repo
-publishing {
-    publications {
-        aar(MavenPublication) {
-            artifactId 'mqtt-library'
-            artifact publishArtifact
+// Because the components are created only during the afterEvaluate phase, you must
+// configure your publications using the afterEvaluate() lifecycle method.
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                // Applies the component for the release build variant.
+                from components.release
 
-            pom {
-                name = 'MQTT Connection Library'
-                description = 'An MQTT UI and connection controller that can be used in an Android app\''
-                url = 'https://github.com/christianrowlands/android-mqtt-connection-lib'
+                artifactId 'mqtt-library'
+                //artifact publishArtifact
 
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/blob/master/LICENSE'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id = 'christianrowlands'
-                        name = 'Christian Rowlands'
-                        email = 'christian.rowlands@gmail.com'
-                    }
-                    developer {
-                        id = 'eliza-mae-alcaraz'
-                        name = 'Eliza Alcaraz'
-                    }
-                }
-
-                scm {
+                pom {
+                    name = 'MQTT Connection Library'
+                    description = 'An MQTT UI and connection controller that can be used in an Android app'
                     url = 'https://github.com/christianrowlands/android-mqtt-connection-lib'
-                    connection = 'scm:git:git://github.com/christianrowlands/android-mqtt-connection-lib.git'
-                    developerConnection = 'scm:git:ssh://git@github.com:christianrowlands/android-mqtt-connection-lib.git'
-                }
 
-                issueManagement {
-                    system = 'GitHub'
-                    url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/issues'
-                }
-
-                withXml {
-                    def dependenciesNode = asNode().appendNode('dependencies')
-
-                    // Iterate over the api dependencies to add a dependency node for each
-                    configurations.api.allDependencies.each {
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/blob/master/LICENSE'
+                        }
                     }
+
+                    developers {
+                        developer {
+                            id = 'christianrowlands'
+                            name = 'Christian Rowlands'
+                            email = 'christian.rowlands@gmail.com'
+                        }
+                        developer {
+                            id = 'eliza-mae-alcaraz'
+                            name = 'Eliza Alcaraz'
+                        }
+                    }
+
+                    scm {
+                        url = 'https://github.com/christianrowlands/android-mqtt-connection-lib'
+                        connection = 'scm:git:git://github.com/christianrowlands/android-mqtt-connection-lib.git'
+                        developerConnection = 'scm:git:ssh://git@github.com:christianrowlands/android-mqtt-connection-lib.git'
+                    }
+
+                    issueManagement {
+                        system = 'GitHub'
+                        url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/issues'
+                    }
+
+/*                    withXml {
+                        def dependenciesNode = asNode().appendNode('dependencies')
+
+                        // Iterate over the api dependencies to add a dependency node for each
+                        configurations.api.allDependencies.each {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                        }
+                    }*/
                 }
             }
-        }
-    }
 
-    repositories {
-        maven {
-            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-            credentials {
-                username sonatypeUsername
-                password sonatypePassword
+            // Creates a Maven publication called “debug”.
+            debug(MavenPublication) {
+                // Applies the component for the debug build variant.
+                from components.debug
+
+                artifactId = 'mqtt-library-debug'
             }
         }
-        mavenLocal()
+
+        repositories {
+            maven {
+                def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+                def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                credentials {
+                    username sonatypeUsername
+                    password sonatypePassword
+                }
+            }
+            mavenLocal()
+        }
     }
 }
 
