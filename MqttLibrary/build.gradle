@@ -28,6 +28,8 @@ android {
         versionCode 2
         versionName version
 
+        setProperty("archivesBaseName", "$applicationName-$versionName")
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
