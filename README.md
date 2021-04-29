@@ -25,6 +25,9 @@ It is important to note that the pieces provided in the library cannot stand on 
 
 
 ## Change log
+##### [0.2.1](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.2.1) - 2021-04-30
+ * Added some additional protections against concurrent MQTT connections.
+
 ##### [0.2.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.2.0) - 2021-04-28
  * Switched out the Eclipse Paho MQTT Client for HiveMQ to improve stability and error scenario handling.
 
