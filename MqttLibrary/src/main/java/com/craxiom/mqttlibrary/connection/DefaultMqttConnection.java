@@ -46,6 +46,7 @@ public class DefaultMqttConnection
     protected String mqttClientId;
     private CompletableFuture<Mqtt3ConnAck> connectFuture;
     private volatile boolean userCanceled = false;
+    private volatile boolean disconnecting = false;
 
     protected DefaultMqttConnection()
     {
@@ -64,6 +65,20 @@ public class DefaultMqttConnection
     {
         try
         {
+            if (mqtt3Client != null && mqtt3Client.getState().isConnectedOrReconnect())
+            {
+                Timber.i("Disconnect in progress, delaying the new connection");
+                try
+                {
+                    final CompletableFuture<Void> disconnectFuture = mqtt3Client.disconnect();
+                    disconnectFuture.get(3, TimeUnit.SECONDS);
+                } catch (Throwable t)
+                {
+                    Timber.e(t, "Could not properly close the old connection before starting a new one.");
+                }
+                Timber.i("Disconnect complete, resuming the new connection");
+            }
+
             userCanceled = false;
             mqttClientId = connectionInfo.getMqttClientId();
 
@@ -91,8 +106,18 @@ public class DefaultMqttConnection
                     .automaticReconnect().maxDelay(60, TimeUnit.SECONDS).applyAutomaticReconnect()
 
                     .addConnectedListener(context -> {
-                        Timber.i("MQTT Broker Connected!!!!");
-                        notifyConnectionStateChange(ConnectionState.CONNECTED);
+                        if (userCanceled)
+                        {
+                            Timber.i("The user canceled the MQTT connection prior to the connection attempt completing, closing the new connection");
+                            synchronized (this)
+                            {
+                                mqtt3Client.disconnect();
+                            }
+                        } else
+                        {
+                            Timber.i("MQTT Broker Connected!!!!");
+                            notifyConnectionStateChange(ConnectionState.CONNECTED);
+                        }
                     })
 
                     .addDisconnectedListener(context -> {
@@ -141,14 +166,17 @@ public class DefaultMqttConnection
                 }
 
                 // Just in case the connection completed between calling isDone() and cancel(), we go through the disconnect to be sure
+                disconnecting = true;
                 final CompletableFuture<Void> disconnect = mqtt3Client.disconnect();
                 disconnect.whenComplete((aVoid, throwable) -> {
                     Timber.d(throwable, "The MQTT disconnect request completed");
                     notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                    disconnecting = false;
                 });
             } catch (Exception e)
             {
                 Timber.e(e, "An exception occurred when disconnecting from the MQTT broker");
+                disconnecting = false;
             }
         }
     }

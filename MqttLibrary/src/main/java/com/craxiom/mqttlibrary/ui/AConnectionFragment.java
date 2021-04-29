@@ -283,6 +283,19 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     {
         if (!hasInternetPermission()) return;
 
+        mqttConnectionToggleSwitch.setEnabled(false);
+        final Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(() -> {
+            try
+            {
+                Timber.v("Enabling the toggle switch");
+                mqttConnectionToggleSwitch.setEnabled(true);
+            } catch (Throwable t)
+            {
+                Timber.wtf(t, "Something went really wrong when trying to re-enable the MQTT Connection Toggle Switch");
+            }
+        }, 1_000);
+
         if (mqttConnectionToggleSwitch.isChecked())
         {
             connectToMqttBroker();
@@ -407,7 +420,6 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
             case CONNECTING:
                 connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusConnecting, null));
                 connectionStatusText.setText(getString(R.string.status_connecting));
-                mqttConnectionToggleSwitch.setEnabled(true);
                 mqttConnectionToggleSwitch.setChecked(true);
                 setConnectionInputFieldsEditable(false, false);
                 break;
