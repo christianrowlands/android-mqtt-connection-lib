@@ -6,6 +6,7 @@ import com.craxiom.mqttlibrary.IConnectionStateListener;
 import com.craxiom.mqttlibrary.IMqttService;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
+import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3Client;
@@ -205,7 +206,7 @@ public class DefaultMqttConnection
 
             if (mqtt3Client.getState().isConnected())
             {
-                mqtt3Client.publishWith().topic(mqttMessageTopic).payload(messageJson.getBytes()).send();
+                mqtt3Client.publishWith().topic(mqttMessageTopic).qos(MqttQos.AT_LEAST_ONCE).payload(messageJson.getBytes()).send();
             }
         } catch (Exception e)
         {
