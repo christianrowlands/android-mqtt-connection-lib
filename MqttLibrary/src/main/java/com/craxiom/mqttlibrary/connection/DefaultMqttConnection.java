@@ -104,7 +104,7 @@ public class DefaultMqttConnection
 
             mqtt3ClientBuilder.serverHost(connectionInfo.getMqttBrokerHost())
                     .serverPort(connectionInfo.getPortNumber())
-                    .automaticReconnect().maxDelay(60, TimeUnit.SECONDS).applyAutomaticReconnect()
+                    .automaticReconnect().maxDelay(20, TimeUnit.SECONDS).applyAutomaticReconnect()
 
                     .addConnectedListener(context -> {
                         if (userCanceled)
@@ -140,7 +140,9 @@ public class DefaultMqttConnection
 
             mqtt3Client = mqtt3ClientBuilder.buildAsync();
 
-            connectFuture = mqtt3Client.connect();
+            // Clean session must be set to false if we want the HiveMQ client library to queue messages while this
+            // device is offline, and then to send those messages when the device comes back online.
+            connectFuture = mqtt3Client.connectWith().cleanSession(false).send();
         } catch (Exception e)
         {
             Timber.e(e, "Unable to create the connection to the MQTT broker");
@@ -204,7 +206,7 @@ public class DefaultMqttConnection
         {
             final String messageJson = jsonFormatter.print(message);
 
-            if (mqtt3Client.getState().isConnected())
+            if (mqtt3Client.getState().isConnectedOrReconnect())
             {
                 mqtt3Client.publishWith().topic(mqttMessageTopic).qos(MqttQos.AT_LEAST_ONCE).payload(messageJson.getBytes()).send();
             }
