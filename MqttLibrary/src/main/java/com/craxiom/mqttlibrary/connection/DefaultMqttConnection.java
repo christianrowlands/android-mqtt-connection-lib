@@ -1,20 +1,29 @@
 package com.craxiom.mqttlibrary.connection;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
 
 import com.craxiom.mqttlibrary.IConnectionStateListener;
 import com.craxiom.mqttlibrary.IMqttService;
+import com.craxiom.mqttlibrary.R;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
+import com.hivemq.client.internal.mqtt.lifecycle.mqtt3.Mqtt3ClientDisconnectedContextView;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
+import com.hivemq.client.mqtt.exceptions.ConnectionFailedException;
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3Client;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3ClientBuilder;
+import com.hivemq.client.mqtt.mqtt3.exceptions.Mqtt3ConnAckException;
 import com.hivemq.client.mqtt.mqtt3.message.auth.Mqtt3SimpleAuth;
 import com.hivemq.client.mqtt.mqtt3.message.auth.Mqtt3SimpleAuthBuilder;
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAck;
+import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAckReturnCode;
 
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -41,6 +50,8 @@ public class DefaultMqttConnection
     private final JsonFormat.Printer jsonFormatter;
     private final List<IConnectionStateListener> mqttConnectionListeners = new CopyOnWriteArrayList<>();
 
+    private final Handler uiThreadHandler;
+
     private volatile ConnectionState connectionState = ConnectionState.DISCONNECTED;
     private Mqtt3AsyncClient mqtt3Client;
 
@@ -52,6 +63,8 @@ public class DefaultMqttConnection
     protected DefaultMqttConnection()
     {
         jsonFormatter = JsonFormat.printer().preservingProtoFieldNames().omittingInsignificantWhitespace();
+
+        uiThreadHandler = new Handler(Looper.getMainLooper());
     }
 
     /**
@@ -124,7 +137,33 @@ public class DefaultMqttConnection
                     .addDisconnectedListener(context -> {
                         final MqttDisconnectSource source = context.getSource();
                         Timber.d(context.getCause(), "MQTT Broker disconnected. source=%s", source);
-                        if (userCanceled)
+
+                        Mqtt3ConnAckReturnCode returnCode = null;
+                        if (context instanceof Mqtt3ClientDisconnectedContextView)
+                        {
+                            final Throwable cause = ((Mqtt3ClientDisconnectedContextView) context).getCause();
+                            if (cause instanceof Mqtt3ConnAckException)
+                            {
+                                returnCode = ((Mqtt3ConnAckException) cause).getMqttMessage().getReturnCode();
+                            }
+                        }
+
+                        if (returnCode == Mqtt3ConnAckReturnCode.BAD_USER_NAME_OR_PASSWORD
+                                || returnCode == Mqtt3ConnAckReturnCode.NOT_AUTHORIZED)
+                        {
+                            notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                            Timber.d("Force stopping the reconnect attempts because the username and password were not correct");
+                            context.getReconnector().reconnect(false);
+                            uiThreadHandler.post(() -> Toast.makeText(applicationContext,
+                                    applicationContext.getText(R.string.connection_error_invalid_credentials), Toast.LENGTH_LONG).show());
+                        } else if (returnCode == Mqtt3ConnAckReturnCode.SERVER_UNAVAILABLE)
+                        {
+                            notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                            Timber.d("Force stopping the reconnect attempts because the server is unavailable");
+                            context.getReconnector().reconnect(false);
+                            uiThreadHandler.post(() -> Toast.makeText(applicationContext,
+                                    applicationContext.getText(R.string.connection_error_server_unavailable), Toast.LENGTH_LONG).show());
+                        } else if (userCanceled)
                         {
                             notifyConnectionStateChange(ConnectionState.DISCONNECTED);
                             Timber.d("Force stopping the reconnect attempts because the user toggled the connection off");
@@ -132,6 +171,18 @@ public class DefaultMqttConnection
                         } else if (source == MqttDisconnectSource.USER)
                         {
                             notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                        } else if (source == MqttDisconnectSource.CLIENT)
+                        {
+                            final Throwable cause = context.getCause();
+                            if (cause instanceof ConnectionFailedException
+                                    && cause.getCause() instanceof UnknownHostException)
+                            {
+                                notifyConnectionStateChange(ConnectionState.DISCONNECTED);
+                                Timber.d("Force stopping the reconnect attempts because the server is unavailable");
+                                context.getReconnector().reconnect(false);
+                                uiThreadHandler.post(() -> Toast.makeText(applicationContext,
+                                        applicationContext.getText(R.string.connection_error_server_unavailable), Toast.LENGTH_LONG).show());
+                            }
                         } else
                         {
                             notifyConnectionStateChange(ConnectionState.CONNECTING);
@@ -200,7 +251,7 @@ public class DefaultMqttConnection
      * @param mqttMessageTopic The MQTT Topic to publish the message to.
      * @param message          The Protobuf message to format as JSON and send to the MQTT Broker.
      */
-    protected synchronized void publishMessage(String mqttMessageTopic, MessageOrBuilder message)
+    protected void publishMessage(String mqttMessageTopic, MessageOrBuilder message)
     {
         try
         {

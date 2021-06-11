@@ -5,6 +5,9 @@
     <string name="status_connected">Connected</string>
     <string name="status_disconnecting">Disconnecting …</string>
 
+    <string name="connection_error_invalid_credentials">Error: Invalid username or password</string>
+    <string name="connection_error_server_unavailable">Error: Server unavailable, check the Server Address for typos</string>
+
     <string name="mqtt_connection_description">Here you can connect to an MQTT broker.  Once connected, all future survey results will be streamed to the server.
         \n\nSteps for Connecting:
         \n\n1. Enter in the following information:
