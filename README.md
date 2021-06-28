@@ -25,6 +25,9 @@ It is important to note that the pieces provided in the library cannot stand on 
 
 
 ## Change log
+##### [0.4.2](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.4.2) - 2021-06-28
+ * Fixed a bug where the MQTT connection would not reestablish when the Internet connection dropped.
+
 ##### [0.4.1](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.4.1) - 2021-06-11
  * Fixed a bug where a UI deadlock could occur when the connection is unsuccessful and messages are published.
  * Improved UX for showing the user connection error reasons such as invalid username and password.
