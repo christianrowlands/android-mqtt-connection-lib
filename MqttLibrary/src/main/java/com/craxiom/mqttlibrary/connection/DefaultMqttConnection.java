@@ -141,7 +141,7 @@ public class DefaultMqttConnection
                         Mqtt3ConnAckReturnCode returnCode = null;
                         if (context instanceof Mqtt3ClientDisconnectedContextView)
                         {
-                            final Throwable cause = ((Mqtt3ClientDisconnectedContextView) context).getCause();
+                            final Throwable cause = context.getCause();
                             if (cause instanceof Mqtt3ConnAckException)
                             {
                                 returnCode = ((Mqtt3ConnAckException) cause).getMqttMessage().getReturnCode();
@@ -156,13 +156,6 @@ public class DefaultMqttConnection
                             context.getReconnector().reconnect(false);
                             uiThreadHandler.post(() -> Toast.makeText(applicationContext,
                                     applicationContext.getText(R.string.connection_error_invalid_credentials), Toast.LENGTH_LONG).show());
-                        } else if (returnCode == Mqtt3ConnAckReturnCode.SERVER_UNAVAILABLE)
-                        {
-                            notifyConnectionStateChange(ConnectionState.DISCONNECTED);
-                            Timber.d("Force stopping the reconnect attempts because the server is unavailable");
-                            context.getReconnector().reconnect(false);
-                            uiThreadHandler.post(() -> Toast.makeText(applicationContext,
-                                    applicationContext.getText(R.string.connection_error_server_unavailable), Toast.LENGTH_LONG).show());
                         } else if (userCanceled)
                         {
                             notifyConnectionStateChange(ConnectionState.DISCONNECTED);
@@ -171,7 +164,8 @@ public class DefaultMqttConnection
                         } else if (source == MqttDisconnectSource.USER)
                         {
                             notifyConnectionStateChange(ConnectionState.DISCONNECTED);
-                        } else if (source == MqttDisconnectSource.CLIENT)
+                        } /* TODO Removing this block because it was causing the reconnect to stop even when the internet connectivity breaks for a few seconds
+                        else if (source == MqttDisconnectSource.CLIENT)
                         {
                             final Throwable cause = context.getCause();
                             if (cause instanceof ConnectionFailedException
@@ -183,7 +177,7 @@ public class DefaultMqttConnection
                                 uiThreadHandler.post(() -> Toast.makeText(applicationContext,
                                         applicationContext.getText(R.string.connection_error_server_unavailable), Toast.LENGTH_LONG).show());
                             }
-                        } else
+                        }*/ else
                         {
                             notifyConnectionStateChange(ConnectionState.CONNECTING);
                         }
