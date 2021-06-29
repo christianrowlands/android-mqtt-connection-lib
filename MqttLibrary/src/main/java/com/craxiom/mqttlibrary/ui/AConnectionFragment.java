@@ -407,38 +407,46 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     {
         Timber.d("Updating the UI state for: %s", connectionState);
 
-        switch (connectionState)
+        try
         {
-            case DISCONNECTED:
-                connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusDisconnected, null));
-                connectionStatusText.setText(getString(R.string.status_disconnected));
-                mqttConnectionToggleSwitch.setEnabled(true);
-                mqttConnectionToggleSwitch.setChecked(false);
-                setConnectionInputFieldsEditable(true, false);
-                break;
 
-            case CONNECTING:
-                connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusConnecting, null));
-                connectionStatusText.setText(getString(R.string.status_connecting));
-                mqttConnectionToggleSwitch.setChecked(true);
-                setConnectionInputFieldsEditable(false, false);
-                break;
+            switch (connectionState)
+            {
+                case DISCONNECTED:
+                    connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusDisconnected, null));
+                    connectionStatusText.setText(getString(R.string.status_disconnected));
+                    mqttConnectionToggleSwitch.setEnabled(true);
+                    mqttConnectionToggleSwitch.setChecked(false);
+                    setConnectionInputFieldsEditable(true, false);
+                    break;
 
-            case CONNECTED:
-                connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusConnected, null));
-                connectionStatusText.setText(getString(R.string.status_connected));
-                mqttConnectionToggleSwitch.setEnabled(true);
-                mqttConnectionToggleSwitch.setChecked(true);
-                setConnectionInputFieldsEditable(false, false);
-                break;
+                case CONNECTING:
+                    connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusConnecting, null));
+                    connectionStatusText.setText(getString(R.string.status_connecting));
+                    mqttConnectionToggleSwitch.setChecked(true);
+                    setConnectionInputFieldsEditable(false, false);
+                    break;
 
-            case DISCONNECTING:
-                connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusDisconnected, null));
-                connectionStatusText.setText(getString(R.string.status_disconnecting));
-                mqttConnectionToggleSwitch.setEnabled(false);
-                mqttConnectionToggleSwitch.setChecked(true);
-                setConnectionInputFieldsEditable(false, false);
-                break;
+                case CONNECTED:
+                    connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusConnected, null));
+                    connectionStatusText.setText(getString(R.string.status_connected));
+                    mqttConnectionToggleSwitch.setEnabled(true);
+                    mqttConnectionToggleSwitch.setChecked(true);
+                    setConnectionInputFieldsEditable(false, false);
+                    break;
+
+                case DISCONNECTING:
+                    connectionStatusCardView.setCardBackgroundColor(getResources().getColor(R.color.connectionStatusDisconnected, null));
+                    connectionStatusText.setText(getString(R.string.status_disconnecting));
+                    mqttConnectionToggleSwitch.setEnabled(false);
+                    mqttConnectionToggleSwitch.setChecked(true);
+                    setConnectionInputFieldsEditable(false, false);
+                    break;
+            }
+        } catch (Exception e)
+        {
+            // An IllegalStateException can occur if the fragment has been moved away from.
+            Timber.w(e, "Caught an exception when trying to update the MQTT Connection Status");
         }
     }
 
