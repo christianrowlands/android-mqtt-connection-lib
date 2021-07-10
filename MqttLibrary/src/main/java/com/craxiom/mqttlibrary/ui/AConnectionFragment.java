@@ -409,7 +409,6 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
 
         try
         {
-
             switch (connectionState)
             {
                 case DISCONNECTED:
