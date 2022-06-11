@@ -25,6 +25,10 @@ It is important to note that the pieces provided in the library cannot stand on 
 
 
 ## Change log
+##### [0.4.4](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.4.4) - 2022-06-11
+ * Added some defensive programming around the service being null when the mdm override switch is toggled.
+ * Updated several of the libraries.
+
 ##### [0.4.3](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.4.3) - 2021-07-10
  * Added some defensive programming when updating the UI state if the fragment has been detached.
 
