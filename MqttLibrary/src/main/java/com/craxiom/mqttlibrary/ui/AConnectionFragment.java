@@ -281,9 +281,8 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      */
     private void onConnectionSwitchToggled()
     {
-        if (!hasInternetPermission()) return;
-
         mqttConnectionToggleSwitch.setEnabled(false);
+
         final Handler handler = new Handler(Looper.getMainLooper());
         handler.postDelayed(() -> {
             try
@@ -295,6 +294,8 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
                 Timber.wtf(t, "Something went really wrong when trying to re-enable the MQTT Connection Toggle Switch");
             }
         }, 1_000);
+
+        if (!hasInternetPermission()) return;
 
         if (mqttConnectionToggleSwitch.isChecked())
         {
@@ -394,7 +395,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         {
             readMdmConfig(); // Read the MDM config back into the UI since the user has returned control back to the MDM server
             updateUiFieldsFromStoredValues();
-            service.attemptMqttConnectWithMdmConfig(true);
+            if (service != null) service.attemptMqttConnectWithMdmConfig(true);
         }
     }
 
