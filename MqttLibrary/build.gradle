@@ -5,6 +5,8 @@
 //   gradle addCredentials --key sonatypePassword --value <password>
 //   gradle addCredentials --key sonatypeKeyPassword --value <password>
 //
+// You also need to have gpg installed for the signing process to work
+//
 // From there, execute `./gradlew clean build publishReleasePublicationToMavenRepository` to build, sign, and upload all the artifacts.
 // The final step is to log in to https://oss.sonatype.org/#stagingRepositories to close and release the staging repo
 
@@ -12,7 +14,7 @@ plugins {
     id 'com.android.library'
     id 'maven-publish'
     id 'signing'
-    id 'nu.studer.credentials' version '1.0.7'
+    id 'nu.studer.credentials' version '3.0'
 }
 
 group 'com.craxiom'
@@ -171,5 +173,5 @@ signing {
  * @return The credential value if located.
  */
 private String findCredentialValue(String value) {
-    return project.credentials."sonatype$value"
+    return project.credentials.forKey("sonatype$value")
 }
