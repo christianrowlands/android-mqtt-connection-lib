@@ -26,6 +26,8 @@
     <string name="help_title">Help?</string>
     <string name="tls">TLS</string>
 
+    <string name="scan_code">Auto Configure with QR code</string>
+
     <string name="mqtt_mdm_override_description">Your MQTT connection settings have been set by a Mobile Device Management server.  Toggle the switch below to override those settings so you can specify your own MQTT Broker connection information.</string>
     <string name="mqtt_mdm_override_title">Override MDM MQTT Settings</string>
     <string name="mdm_override_title">MDM Override</string>

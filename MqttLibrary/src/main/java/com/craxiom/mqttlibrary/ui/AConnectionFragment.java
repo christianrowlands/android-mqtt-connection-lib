@@ -21,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -63,12 +64,12 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     private CardView connectionStatusCardView;
     private TextView connectionStatusText;
     private SwitchCompat mqttConnectionToggleSwitch;
-    private EditText mqttHostAddressEdit;
-    private EditText mqttPortNumberEdit;
-    private SwitchCompat tlsToggleSwitch;
-    private EditText deviceNameEdit;
-    private EditText usernameEdit;
-    private EditText passwordEdit;
+    protected EditText mqttHostAddressEdit;
+    protected EditText mqttPortNumberEdit;
+    protected SwitchCompat tlsToggleSwitch;
+    protected EditText deviceNameEdit;
+    protected EditText usernameEdit;
+    protected EditText passwordEdit;
 
     private boolean mdmConfigPresent;
     private boolean mdmOverride = false;
