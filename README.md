@@ -25,6 +25,10 @@ It is important to note that the pieces provided in the library cannot stand on 
 
 
 ## Change log
+##### [0.4.5](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.4.5) - 2022-06-16
+ * Made MQTT connection fields protected so they can be manipulated from deriving classes
+ * Updated some dependencies
+
 ##### [0.4.4](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.4.4) - 2022-06-11
  * Added some defensive programming around the service being null when the mdm override switch is toggled.
  * Updated several of the libraries.
