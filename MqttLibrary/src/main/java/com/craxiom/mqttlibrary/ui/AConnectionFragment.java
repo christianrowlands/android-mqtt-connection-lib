@@ -63,12 +63,12 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     private CardView connectionStatusCardView;
     private TextView connectionStatusText;
     private SwitchCompat mqttConnectionToggleSwitch;
-    private EditText mqttHostAddressEdit;
-    private EditText mqttPortNumberEdit;
-    private SwitchCompat tlsToggleSwitch;
-    private EditText deviceNameEdit;
-    private EditText usernameEdit;
-    private EditText passwordEdit;
+    protected EditText mqttHostAddressEdit;
+    protected EditText mqttPortNumberEdit;
+    protected SwitchCompat tlsToggleSwitch;
+    protected EditText deviceNameEdit;
+    protected EditText usernameEdit;
+    protected EditText passwordEdit;
 
     private boolean mdmConfigPresent;
     private boolean mdmOverride = false;
