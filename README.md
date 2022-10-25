@@ -25,6 +25,9 @@ It is important to note that the pieces provided in the library cannot stand on 
 
 
 ## Change log
+##### [0.5.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.5.0) - 2022-10-25
+* Change the onMdmOverride method to protected so it can be overridden
+
 ##### [0.4.5](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.4.5) - 2022-06-16
  * Made MQTT connection fields protected so they can be manipulated from deriving classes.
  * Updated some dependencies.
