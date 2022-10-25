@@ -382,7 +382,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      *
      * @param mdmOverride True if the MDM configuration should be ignored, false if the MDM configuration should be used.
      */
-    private void onMdmOverride(boolean mdmOverride)
+    protected void onMdmOverride(boolean mdmOverride)
     {
         this.mdmOverride = mdmOverride;
         storeMdmOverrideParameter();
