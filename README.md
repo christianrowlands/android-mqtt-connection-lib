@@ -25,6 +25,9 @@ It is important to note that the pieces provided in the library cannot stand on 
 
 
 ## Change log
+##### 0.6.0 - 2023-07-17
+* Overload the publishMessage method to enable sending plain JSON strings.
+
 ##### [0.5.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.5.0) - 2022-10-25
 * Change the onMdmOverride method to protected so it can be overridden
 

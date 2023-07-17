@@ -8,11 +8,11 @@ import android.widget.Toast;
 import com.craxiom.mqttlibrary.IConnectionStateListener;
 import com.craxiom.mqttlibrary.IMqttService;
 import com.craxiom.mqttlibrary.R;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.hivemq.client.internal.mqtt.lifecycle.mqtt3.Mqtt3ClientDisconnectedContextView;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
-import com.hivemq.client.mqtt.exceptions.ConnectionFailedException;
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3Client;
@@ -23,7 +23,6 @@ import com.hivemq.client.mqtt.mqtt3.message.auth.Mqtt3SimpleAuthBuilder;
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAck;
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAckReturnCode;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -249,15 +248,26 @@ public class DefaultMqttConnection
     {
         try
         {
-            final String messageJson = jsonFormatter.print(message);
-
-            if (mqtt3Client.getState().isConnectedOrReconnect())
-            {
-                mqtt3Client.publishWith().topic(mqttMessageTopic).qos(MqttQos.AT_LEAST_ONCE).payload(messageJson.getBytes()).send();
-            }
-        } catch (Exception e)
+            final String jsonMessage = jsonFormatter.print(message);
+            publishMessage(mqttMessageTopic, jsonMessage);
+        } catch (InvalidProtocolBufferException e)
         {
             Timber.e(e, "Caught an exception when trying to send an MQTT message");
+        }
+    }
+
+    /**
+     * Publishes the JSON string to the specified topic.
+     *
+     * @param mqttMessageTopic The MQTT topic to publish the message to.
+     * @param jsonMessage      The JSON string to send to the MQTT broker.
+     * @since 0.6.0
+     */
+    protected void publishMessage(String mqttMessageTopic, String jsonMessage)
+    {
+        if (mqtt3Client.getState().isConnectedOrReconnect())
+        {
+            mqtt3Client.publishWith().topic(mqttMessageTopic).qos(MqttQos.AT_LEAST_ONCE).payload(jsonMessage.getBytes()).send();
         }
     }
 
