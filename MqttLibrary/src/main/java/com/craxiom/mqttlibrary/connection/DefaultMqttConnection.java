@@ -58,6 +58,7 @@ public class DefaultMqttConnection
     private CompletableFuture<Mqtt3ConnAck> connectFuture;
     private volatile boolean userCanceled = false;
     private volatile boolean disconnecting = false;
+    private String topicPrefix;
 
     protected DefaultMqttConnection()
     {
@@ -94,6 +95,7 @@ public class DefaultMqttConnection
 
             userCanceled = false;
             mqttClientId = connectionInfo.getMqttClientId();
+            topicPrefix = connectionInfo.getTopicPrefix();
 
             final String username = connectionInfo.getMqttUsername();
             final String password = connectionInfo.getMqttPassword();
@@ -241,7 +243,7 @@ public class DefaultMqttConnection
      * <p>
      * The Protobuf message is formatted as JSON and then published to the specified topic.
      *
-     * @param mqttMessageTopic The MQTT Topic to publish the message to.
+     * @param mqttMessageTopic The MQTT Topic to publish the message to. The {@link #topicPrefix} will be prepended to this.
      * @param message          The Protobuf message to format as JSON and send to the MQTT Broker.
      */
     protected void publishMessage(String mqttMessageTopic, MessageOrBuilder message)
@@ -259,7 +261,7 @@ public class DefaultMqttConnection
     /**
      * Publishes the JSON string to the specified topic.
      *
-     * @param mqttMessageTopic The MQTT topic to publish the message to.
+     * @param mqttMessageTopic The MQTT topic to publish the message to. The {@link #topicPrefix} will be prepended to this.
      * @param jsonMessage      The JSON string to send to the MQTT broker.
      * @since 0.6.0
      */
@@ -267,7 +269,7 @@ public class DefaultMqttConnection
     {
         if (mqtt3Client.getState().isConnectedOrReconnect())
         {
-            mqtt3Client.publishWith().topic(mqttMessageTopic).qos(MqttQos.AT_LEAST_ONCE).payload(jsonMessage.getBytes()).send();
+            mqtt3Client.publishWith().topic(topicPrefix + mqttMessageTopic).qos(MqttQos.AT_LEAST_ONCE).payload(jsonMessage.getBytes()).send();
         }
     }
 

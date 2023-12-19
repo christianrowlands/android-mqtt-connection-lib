@@ -26,6 +26,11 @@
     <string name="help_title">Help?</string>
     <string name="tls">TLS</string>
 
+    <string name="mqtt_topic_prefix_title">MQTT Topic Prefix</string>
+    <string name="mqtt_topic_prefix_explanation">Leaving the MQTT Topic Prefix blank is perfectly fine. Change this setting only if you want the data to appear under a different topic on your MQTT server. This is for advanced users.</string>
+    <string name="topic_prefix_label">Topic Prefix:</string>
+    <string name="hint_mqtt_topic_prefix">Enter MQTT Topic Prefix</string>
+
     <string name="scan_code">Auto Configure with QR code</string>
 
     <string name="mqtt_mdm_override_description">Your MQTT connection settings have been set by a Mobile Device Management server.  Toggle the switch below to override those settings so you can specify your own MQTT Broker connection information.</string>
@@ -33,4 +38,5 @@
     <string name="mdm_override_title">MDM Override</string>
     <string name="mqtt_mdm_override_summary_on">MDM control is on, but now some of the MDM settings can be overridden</string>
     <string name="mqtt_mdm_override_summary_off">MDM control is on</string>
+    <string name="change">Change</string>
 </resources>

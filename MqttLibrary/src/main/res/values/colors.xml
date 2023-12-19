@@ -6,4 +6,6 @@
 
     <color name="colorCardDark">#161212</color>
     <color name="white_87">#DEFFFFFF</color>
+    <color name="normalText">#EFEFEF</color>
+    <color name="fadedText">#C2C1C1</color>
 </resources>

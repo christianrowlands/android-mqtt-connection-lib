@@ -21,11 +21,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
@@ -69,6 +71,8 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     protected EditText deviceNameEdit;
     protected EditText usernameEdit;
     protected EditText passwordEdit;
+    private TextView topicPrefixTextView;
+    private Button changePrefixButton;
 
     private boolean mdmConfigPresent;
     private boolean mdmOverride = false;
@@ -78,8 +82,9 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     protected String deviceName = "";
     protected String mqttUsername = "";
     protected String mqttPassword = "";
+    protected String topicPrefix = "";
 
-    public AConnectionFragment()
+    protected AConnectionFragment()
     {
         uiThreadHandler = new Handler(Looper.getMainLooper());
     }
@@ -170,6 +175,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         deviceNameEdit.setText(deviceName);
         usernameEdit.setText(mqttUsername);
         passwordEdit.setText(mqttPassword);
+        setTopicPrefixTextView(topicPrefix);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -191,6 +197,10 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         deviceNameEdit = view.findViewById(R.id.deviceName);
         usernameEdit = view.findViewById(R.id.mqttUsername);
         passwordEdit = view.findViewById(R.id.mqttPassword);
+        topicPrefixTextView = view.findViewById(R.id.mqttTopicPrefixDisplay);
+        changePrefixButton = view.findViewById(R.id.changePrefixButton);
+
+        changePrefixButton.setOnClickListener(v -> showTopicPrefixDialog());
 
         inflateAdditionalFieldsViewStub(inflater, view.findViewById(R.id.additional_fields_view_stub));
 
@@ -373,6 +383,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         tlsEnabled = mdmProperties.getBoolean(MqttConstants.PROPERTY_MQTT_CONNECTION_TLS_ENABLED, MqttConstants.DEFAULT_MQTT_TLS_SETTING);
         mqttUsername = mdmProperties.getString(MqttConstants.PROPERTY_MQTT_USERNAME);
         mqttPassword = mdmProperties.getString(MqttConstants.PROPERTY_MQTT_PASSWORD);
+        topicPrefix = mdmProperties.getString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, MqttConstants.DEFAULT_MQTT_TOPIC_PREFIX);
 
         readMdmConfigAdditionalProperties(mdmProperties);
     }
@@ -447,6 +458,21 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         {
             // An IllegalStateException can occur if the fragment has been moved away from.
             Timber.w(e, "Caught an exception when trying to update the MQTT Connection Status");
+        }
+    }
+
+    /**
+     * Update the topic prefix text view with the given topic prefix. If the topic prefix is empty,
+     * then a dash is displayed instead.
+     */
+    private void setTopicPrefixTextView(String topicPrefix)
+    {
+        if (topicPrefix.isEmpty())
+        {
+            topicPrefixTextView.setText("-");
+        } else
+        {
+            topicPrefixTextView.setText(topicPrefix);
         }
     }
 
@@ -577,6 +603,12 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         {
             edit.putString(MqttConstants.PROPERTY_MQTT_PASSWORD, mqttPassword);
         }
+        if (topicPrefix != null)
+        {
+            // Even though we store the prefix when the dialog is closed, we still need to store it
+            // here in case the variable was set via MDM config.
+            edit.putString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, topicPrefix);
+        }
 
         storeAdditionalParameters(edit);
 
@@ -609,6 +641,9 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         final String restoredPassword = preferences.getString(MqttConstants.PROPERTY_MQTT_PASSWORD, "");
         if (!restoredPassword.isEmpty()) mqttPassword = restoredPassword;
 
+        final String restoredPrefix = preferences.getString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, MqttConstants.DEFAULT_MQTT_TOPIC_PREFIX);
+        if (!restoredPrefix.isEmpty()) topicPrefix = restoredPrefix;
+
         restoreAdditionalParameters(preferences);
     }
 
@@ -622,7 +657,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      */
     protected BrokerConnectionInfo getBrokerConnectionInfo()
     {
-        return new BrokerConnectionInfo(host, portNumber, tlsEnabled, deviceName, mqttUsername, mqttPassword);
+        return new BrokerConnectionInfo(host, portNumber, tlsEnabled, deviceName, mqttUsername, mqttPassword, topicPrefix);
     }
 
     /**
@@ -654,6 +689,43 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         tlsToggleSwitch.setEnabled(editable);
         usernameEdit.setEnabled(editable);
         passwordEdit.setEnabled(editable);
+        changePrefixButton.setEnabled(editable);
+    }
+
+    /**
+     * Show the dialog that allows the user to change the MQTT topic prefix.
+     */
+    private void showTopicPrefixDialog()
+    {
+        final FragmentActivity activity = getActivity();
+        if (activity == null)
+        {
+            Timber.wtf("The Activity is null so we are unable to show the sorting dialog.");
+            return;
+        }
+
+        LayoutInflater inflater = activity.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_topic_prefix, null);
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(R.string.mqtt_topic_prefix_title);
+        builder.setView(dialogView);
+
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
+        EditText etTopicPrefix = dialogView.findViewById(R.id.etTopicPrefix);
+        etTopicPrefix.setText(topicPrefix);
+
+        builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+            String topicPrefix = etTopicPrefix.getText().toString();
+            preferences.edit().putString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, topicPrefix).apply();
+            this.topicPrefix = topicPrefix;
+            setTopicPrefixTextView(topicPrefix);
+        });
+        builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
+
+        final AlertDialog dialog = builder.create();
+        dialog.setOwnerActivity(activity);
+        dialog.show();
     }
 
     /**

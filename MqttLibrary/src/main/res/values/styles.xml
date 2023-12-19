@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <attr name="cardStyle" format="reference" />
+
     <style name="DescriptionText" parent="TextAppearance.AppCompat">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">#c2c1c1</item>
@@ -23,5 +24,33 @@
     <style name="StatusText" parent="TextAppearance.AppCompat">
         <item name="android:textSize">20sp</item>
         <item name="android:textColor">@color/white_87</item>
+    </style>
+
+    <style name="SmallLabelText" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">16sp</item>
+        <item name="android:autoSizeMaxTextSize">16sp</item>
+        <item name="android:autoSizeMinTextSize">10sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeStepGranularity">2sp</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textColor">@color/fadedText</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="StandardText" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">18sp</item>
+        <item name="android:autoSizeMaxTextSize">18sp</item>
+        <item name="android:autoSizeMinTextSize">10sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeStepGranularity">2sp</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/normalText</item>
+        <item name="android:layout_marginTop">@dimen/x_small_margin</item>
+        <item name="android:layout_marginBottom">@dimen/x_small_margin</item>
+        <item name="android:layout_marginStart">@dimen/small_margin</item>
+        <item name="android:layout_marginEnd">@dimen/small_margin</item>
     </style>
 </resources>

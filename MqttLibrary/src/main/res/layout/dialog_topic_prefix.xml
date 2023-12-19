@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/mqtt_topic_prefix_explanation"
+        android:paddingBottom="16dp" />
+
+    <EditText
+        android:id="@+id/etTopicPrefix"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_mqtt_topic_prefix"
+        android:importantForAutofill="no"
+        android:inputType="text" />
+</LinearLayout>

@@ -8,6 +8,7 @@ public class MqttConstants
     public static final int MQTT_PLAIN_TEXT_PORT = 1883;
     public static final int MQTT_SSL_PORT = 8883;
     public static final int DEFAULT_MQTT_PORT = MQTT_SSL_PORT;
+    public static final String DEFAULT_MQTT_TOPIC_PREFIX = "";
 
     // The following keys are used in the app_restrictions.xml file and also are settings stored in the app's shared preferences
     public static final String PROPERTY_MQTT_CONNECTION_HOST = "mqtt_connection_host";
@@ -16,4 +17,5 @@ public class MqttConstants
     public static final String PROPERTY_MQTT_CONNECTION_TLS_ENABLED = "mqtt_tls_enabled";
     public static final String PROPERTY_MQTT_USERNAME = "mqtt_username";
     public static final String PROPERTY_MQTT_PASSWORD = "mqtt_password";
+    public static final String PROPERTY_MQTT_TOPIC_PREFIX = "mqtt_topic_prefix";
 }
