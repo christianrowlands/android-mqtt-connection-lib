@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'The version to set for the release (e.g. 1.0.0'
+        description: 'The version to set for the release (e.g. 1.0.0)'
         required: true
 
 jobs:
@@ -42,6 +42,9 @@ jobs:
           fi
 
       - name: Create and push tag
+        env:
+          # You must use a personal access token when pushing the tag or it won't trigger the next workflow (purposefully done by GH to prevent runaway recursive workflows)
+          GITHUB_TOKEN: ${{ secrets.MY_GH_TOKEN }}
         run: |
           TAG="v${{ github.event.inputs.version }}"
           git tag $TAG
