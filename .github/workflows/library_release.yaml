@@ -1,4 +1,4 @@
-name: NS Messaging library Release and AsyncAPI documents processing
+name: Build and Publish Release Artifacts
 
 on:
   push:

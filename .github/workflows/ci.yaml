@@ -7,7 +7,7 @@ on:
     branches: [ '*' ]
 
 jobs:
-  generate:
+  test:
     runs-on: ubuntu-latest
     steps:
       #"standard step" where repo needs to be checked-out first
