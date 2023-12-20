@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'The version to set for the release'
+        description: 'The version to set for the release (e.g. 1.0.0'
         required: true
 
 jobs:
@@ -21,12 +21,12 @@ jobs:
         run: |
           # Update build.gradle with new version
           echo "${{ github.event.inputs.version }}"
-          sed -i "s/version \"[^\"]*\"/version \"${{ github.event.inputs.version }}\"/g" build.gradle
+          sed -i "s/version \"[^\"]*\"/version \"${{ github.event.inputs.version }}\"/g" MqttLibrary/build.gradle
 
       - name: Set version in README example
         run: |
           echo "${{ github.event.inputs.version }}"
-          sed -i "s/implementation 'com.craxiom:mqttlibrary:[^\"]*\'/implementation 'com.craxiom:mqttlibrary:${{ github.event.inputs.version }}\'/g" build.gradle
+          sed -i "s/implementation 'com.craxiom:mqttlibrary:[^\"]*\'/implementation 'com.craxiom:mqttlibrary:${{ github.event.inputs.version }}\'/g" README.md
 
       - name: Commit and push changes
         run: |
