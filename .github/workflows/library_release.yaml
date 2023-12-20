@@ -71,7 +71,7 @@ jobs:
       - name: Create a Release in GitHub
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/outputs/aar/*.aar"
+          artifacts: "MqttLibrary/build/outputs/aar/*.aar"
           tag: v${{ env.VERSION_NAME }}
           commit: ${{ github.sha }}
           generateReleaseNotes: true
