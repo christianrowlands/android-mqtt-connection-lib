@@ -1,0 +1,75 @@
+name: NS Messaging library Release and AsyncAPI documents processing
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+
+  buildRelease:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Extract version from tag
+        uses: damienaicheh/extract-version-from-tag-action@v1.1.0
+
+      - name: Set version name variable
+        run: |
+          # Set new version name from tag
+           version_name=${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.PATCH }}
+
+          # Set environment variable for later use
+          echo "VERSION_NAME=$version_name" >> $GITHUB_ENV
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: 'adopt'
+          cache: 'gradle'
+
+      - name: Save GPG Keys
+        env:
+          GPG_FILE: ${{ secrets.GPG_FILE }}
+        run: echo $GPG_FILE | base64 -d > sonatype-secret-keys.gpg
+
+      - name: Add Gradle Credentials
+        env:
+          GPG_KEY_PASSWORD: ${{ secrets.GPG_KEY_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: |
+          ./gradlew addCredentials --key sonatypeUsername --value $SONATYPE_USERNAME
+          ./gradlew addCredentials --key sonatypePassword --value $SONATYPE_PASSWORD
+          ./gradlew addCredentials --key sonatypeKeyPassword --value $GPG_KEY_PASSWORD
+
+      - name: Create gradle.properties
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          echo "signing.keyId=$GPG_KEY_ID" >> gradle.properties
+          echo "signing.secretKeyRingFile=$(pwd)/sonatype-secret-keys.gpg" >> gradle.properties
+
+      - name: Build and Publish Release Artifacts
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          GPG_KEY_PASSWORD: ${{ secrets.GPG_KEY_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: ./gradlew clean build publishReleasePublicationToMavenRepository
+
+      - name: Create a Release in GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/outputs/aar/*.aar"
+          tag: ${{ env.VERSION_NAME }}
+          commit: ${{ github.sha }}
+          generateReleaseNotes: true
+          draft: false

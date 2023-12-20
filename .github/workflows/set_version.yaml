@@ -1,0 +1,48 @@
+name: Sets the version for a release and tags the repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version to set for the release'
+        required: true
+
+jobs:
+  setVersion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Set version in build.gradle
+        run: |
+          # Update build.gradle with new version
+          echo "${{ github.event.inputs.version }}"
+          sed -i "s/version \"[^\"]*\"/version \"${{ github.event.inputs.version }}\"/g" build.gradle
+
+      - name: Set version in README example
+        run: |
+          echo "${{ github.event.inputs.version }}"
+          sed -i "s/implementation 'com.craxiom:mqttlibrary:[^\"]*\'/implementation 'com.craxiom:mqttlibrary:${{ github.event.inputs.version }}\'/g" build.gradle
+
+      - name: Commit and push changes
+        run: |
+          git config user.email "github-actions@github.com"
+          git config user.name "Github Actions"
+          git add .
+          # Check for changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Bump version to ${{ env.VERSION_NAME }}"
+            git push origin main
+          fi
+
+      - name: Create and push tag
+        run: |
+          TAG="v${{ github.event.inputs.version }}"
+          git tag $TAG
+          git push origin $TAG
