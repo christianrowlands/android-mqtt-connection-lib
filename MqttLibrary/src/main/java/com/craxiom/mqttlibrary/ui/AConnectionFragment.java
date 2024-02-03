@@ -700,7 +700,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         final FragmentActivity activity = getActivity();
         if (activity == null)
         {
-            Timber.wtf("The Activity is null so we are unable to show the sorting dialog.");
+            Timber.wtf("The Activity is null so we are unable to show the topic prefix dialog.");
             return;
         }
 
