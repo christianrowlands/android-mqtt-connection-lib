@@ -749,15 +749,21 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
 
     private void startAndBindToService()
     {
-        // Start the service
-        Timber.i("Binding to the service");
-        final Intent serviceIntent = new Intent(applicationContext, getServiceClass());
-        applicationContext.startService(serviceIntent);
+        try
+        {
+            // Start the service
+            Timber.i("Binding to the service");
+            final Intent serviceIntent = new Intent(applicationContext, getServiceClass());
+            applicationContext.startService(serviceIntent);
 
-        // Bind to the service
-        ServiceConnection surveyServiceConnection = new SurveyServiceConnection();
-        final boolean bound = applicationContext.bindService(serviceIntent, surveyServiceConnection, Context.BIND_ABOVE_CLIENT);
-        Timber.i("%s service bound in the AConnectionFragment: %s", getServiceClass().getSimpleName(), bound);
+            // Bind to the service
+            ServiceConnection surveyServiceConnection = new SurveyServiceConnection();
+            final boolean bound = applicationContext.bindService(serviceIntent, surveyServiceConnection, Context.BIND_ABOVE_CLIENT);
+            Timber.i("%s service bound in the AConnectionFragment: %s", getServiceClass().getSimpleName(), bound);
+        } catch (Exception e)
+        {
+            Timber.e(e, "Could not start the Service");
+        }
     }
 
     protected abstract Class<?> getServiceClass();
