@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.1](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.1) - 2024-02-19
+* Handle the edge case where the app has been minimized while the service is starting.
+* Update the hive MQTT client.
+
 ## [0.7.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.0) - 2023-12-20
 * Add support for setting a topic prefix for the MQTT topics that this library publishes to.
 
