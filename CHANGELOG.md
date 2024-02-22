@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.7.2](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.2) - 2024-02-22
+* Fixed a memory leak where the service connection was not unbound when the fragment was paused.
+
 ## [0.7.1](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.1) - 2024-02-19
 * Handle the edge case where the app has been minimized while the service is starting.
 * Update the hive MQTT client.
