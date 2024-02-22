@@ -54,6 +54,8 @@ import timber.log.Timber;
  */
 public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceBinder> extends Fragment implements IConnectionStateListener
 {
+    protected final SurveyServiceConnection surveyServiceConnection = new SurveyServiceConnection();
+
     private static final int ACCESS_PERMISSION_REQUEST_ID = 10;
 
     private final Handler uiThreadHandler;
@@ -254,7 +256,19 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     @Override
     public void onPause()
     {
-        if (service != null) service.unregisterMqttConnectionStateListener(this);
+        try
+        {
+            requireContext().getApplicationContext().unbindService(surveyServiceConnection);
+        } catch (Throwable t)
+        {
+            Timber.e(t, "Could not unbind the service because it is not bound.");
+        }
+
+        if (service != null)
+        {
+            service.unregisterMqttConnectionStateListener(this);
+            service = null;
+        }
 
         super.onPause();
     }
@@ -263,6 +277,10 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     public void onDestroyView()
     {
         hideSoftInputFromWindow();
+
+        applicationContext = null;
+        service = null;
+
         super.onDestroyView();
     }
 
@@ -757,7 +775,6 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
             applicationContext.startService(serviceIntent);
 
             // Bind to the service
-            ServiceConnection surveyServiceConnection = new SurveyServiceConnection();
             final boolean bound = applicationContext.bindService(serviceIntent, surveyServiceConnection, Context.BIND_ABOVE_CLIENT);
             Timber.i("%s service bound in the AConnectionFragment: %s", getServiceClass().getSimpleName(), bound);
         } catch (Exception e)
