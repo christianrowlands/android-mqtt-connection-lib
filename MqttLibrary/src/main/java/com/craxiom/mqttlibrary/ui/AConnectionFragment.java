@@ -597,7 +597,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     /**
      * Store the connection host address and port number so they can be used on app restart.
      */
-    private void storeConnectionParameters()
+    protected void storeConnectionParameters()
     {
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
         final SharedPreferences.Editor edit = preferences.edit();

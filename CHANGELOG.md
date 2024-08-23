@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.7.3](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.3) - 2024-08-23
+* Change the access modifier of the storeConnectionParameters method to protected so it can be called.
+
 ## [0.7.2](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.2) - 2024-02-22
 * Fixed a memory leak where the service connection was not unbound when the fragment was paused.
 
