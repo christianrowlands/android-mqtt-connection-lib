@@ -18,15 +18,14 @@ plugins {
 }
 
 group 'com.craxiom'
-version "0.8.0-SNAPSHOT"
+version "0.7.4-SNAPSHOT"
 
 android {
-    compileSdk 34
-    buildToolsVersion "30.0.3"
+    compileSdk 35
 
     defaultConfig {
         minSdkVersion 26
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode 13
         versionName version
 
@@ -34,6 +33,8 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    namespace 'com.craxiom.mqttlibrary'
 
     buildTypes {
         release {
@@ -45,12 +46,21 @@ android {
         disable('AllowBackup', 'GoogleAppIndexingWarning', 'MissingApplicationIcon')
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     packagingOptions {
         exclude 'META-INF/INDEX.LIST'
         exclude 'META-INF/io.netty.versions.properties'
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+        singleVariant("debug") {
+            withSourcesJar()
+        }
     }
 }
 
