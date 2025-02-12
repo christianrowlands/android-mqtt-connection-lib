@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.7.5](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.5) - 2025-02-12
+* Update the protobuf and hive mqtt libraries.
+
 ## [0.7.4](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.4) - 2024-11-04
 * Center the connection status text vertically.
 * Update the gradle version and the Android SDK version to 35.
