@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import timber.log.Timber;
 
@@ -57,6 +58,12 @@ public class DefaultMqttConnection
     private CompletableFuture<Mqtt3ConnAck> connectFuture;
     private volatile boolean userCanceled = false;
     private volatile boolean disconnecting = false;
+    /**
+     * Generation counter to track client instances. Incremented each time a new client is created.
+     * Listeners capture the generation at creation time and ignore events if generation doesn't match.
+     * This prevents stale client callbacks from affecting the current connection state.
+     */
+    private final AtomicLong clientGeneration = new AtomicLong(0);
     private String topicPrefix;
     private com.hivemq.client.mqtt.datatypes.MqttQos hiveMqttQos;
 
@@ -79,18 +86,24 @@ public class DefaultMqttConnection
     {
         try
         {
+            // Increment generation FIRST to invalidate any callbacks from old client
+            final long thisGeneration = clientGeneration.incrementAndGet();
+            Timber.d("Creating new MQTT client with generation %d", thisGeneration);
+
             if (mqtt3Client != null && mqtt3Client.getState().isConnectedOrReconnect())
             {
-                Timber.i("Disconnect in progress, delaying the new connection");
+                Timber.d("Attempting to disconnect old client before creating new one");
                 try
                 {
                     final CompletableFuture<Void> disconnectFuture = mqtt3Client.disconnect();
                     disconnectFuture.get(3, TimeUnit.SECONDS);
+                    Timber.d("Old client disconnect completed");
                 } catch (Throwable t)
                 {
-                    Timber.e(t, "Could not properly close the old connection before starting a new one.");
+                    // This is expected when the old client was in reconnecting state but not actually connected.
+                    // The generation counter will ensure the old client's callbacks are ignored anyway.
+                    Timber.d(t, "Old client disconnect did not complete cleanly (expected if client was reconnecting)");
                 }
-                Timber.i("Disconnect complete, resuming the new connection");
             }
 
             userCanceled = false;
@@ -123,6 +136,14 @@ public class DefaultMqttConnection
                     .automaticReconnect().maxDelay(20, TimeUnit.SECONDS).applyAutomaticReconnect()
 
                     .addConnectedListener(context -> {
+                        // Check if this listener's generation is still current
+                        if (thisGeneration != clientGeneration.get())
+                        {
+                            Timber.d("Ignoring connected event from stale client (generation %d, current %d)",
+                                    thisGeneration, clientGeneration.get());
+                            return;
+                        }
+
                         if (userCanceled)
                         {
                             Timber.i("The user canceled the MQTT connection prior to the connection attempt completing, closing the new connection");
@@ -138,6 +159,16 @@ public class DefaultMqttConnection
                     })
 
                     .addDisconnectedListener(context -> {
+                        // Check if this listener's generation is still current
+                        if (thisGeneration != clientGeneration.get())
+                        {
+                            Timber.d("Ignoring disconnected event from stale client (generation %d, current %d), stopping reconnect",
+                                    thisGeneration, clientGeneration.get());
+                            // Stop reconnect attempts for stale client
+                            context.getReconnector().reconnect(false);
+                            return;
+                        }
+
                         final MqttDisconnectSource source = context.getSource();
                         Timber.d(context.getCause(), "MQTT Broker disconnected. source=%s", source);
 
