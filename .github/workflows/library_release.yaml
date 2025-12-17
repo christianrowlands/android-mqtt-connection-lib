@@ -68,6 +68,22 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: ./gradlew clean build publishReleasePublicationToMavenRepository
 
+      - name: Upload to Central Publisher Portal
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: |
+          BEARER_TOKEN=$(echo -n "$SONATYPE_USERNAME:$SONATYPE_PASSWORD" | base64)
+          HTTP_STATUS=$(curl -X POST "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/com.craxiom" \
+            -H "Authorization: Bearer $BEARER_TOKEN" \
+            -w "%{http_code}" \
+            -o /dev/null \
+            -s)
+          echo "HTTP Status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ] && [ "$HTTP_STATUS" -ne 204 ]; then
+            echo "Warning: Upload to Central Publisher Portal returned status $HTTP_STATUS"
+          fi
+
       - name: Create a Release in GitHub
         uses: ncipollo/release-action@v1
         with:
