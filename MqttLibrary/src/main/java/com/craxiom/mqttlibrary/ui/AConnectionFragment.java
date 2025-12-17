@@ -21,6 +21,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -38,9 +40,11 @@ import androidx.fragment.app.FragmentActivity;
 import com.craxiom.mqttlibrary.IConnectionStateListener;
 import com.craxiom.mqttlibrary.IMqttService;
 import com.craxiom.mqttlibrary.MqttConstants;
+import com.craxiom.mqttlibrary.MqttQos;
 import com.craxiom.mqttlibrary.R;
 import com.craxiom.mqttlibrary.connection.BrokerConnectionInfo;
 import com.craxiom.mqttlibrary.connection.ConnectionState;
+import com.google.android.material.textfield.TextInputLayout;
 
 import timber.log.Timber;
 
@@ -75,6 +79,8 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     protected EditText passwordEdit;
     private TextView topicPrefixTextView;
     private Button changePrefixButton;
+    private TextInputLayout mqttQosTextInputLayout;
+    private AutoCompleteTextView mqttQosDropdown;
 
     private boolean mdmConfigPresent;
     private boolean mdmOverride = false;
@@ -85,6 +91,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     protected String mqttUsername = "";
     protected String mqttPassword = "";
     protected String topicPrefix = "";
+    protected MqttQos mqttQos = MqttConstants.DEFAULT_MQTT_QOS;
 
     protected AConnectionFragment()
     {
@@ -178,6 +185,12 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         usernameEdit.setText(mqttUsername);
         passwordEdit.setText(mqttPassword);
         setTopicPrefixTextView(topicPrefix);
+        String[] qosOptions = {
+                getString(R.string.qos_at_most_once),
+                getString(R.string.qos_at_least_once),
+                getString(R.string.qos_exactly_once)
+        };
+        mqttQosDropdown.setText(qosOptions[mqttQos.getValue()], false);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -201,8 +214,11 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         passwordEdit = view.findViewById(R.id.mqttPassword);
         topicPrefixTextView = view.findViewById(R.id.mqttTopicPrefixDisplay);
         changePrefixButton = view.findViewById(R.id.changePrefixButton);
+        mqttQosTextInputLayout = view.findViewById(R.id.mqttQosTextInputLayout);
+        mqttQosDropdown = view.findViewById(R.id.mqttQosDropdown);
 
         changePrefixButton.setOnClickListener(v -> showTopicPrefixDialog());
+        setupQosDropdown();
 
         inflateAdditionalFieldsViewStub(inflater, view.findViewById(R.id.additional_fields_view_stub));
 
@@ -402,6 +418,8 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         mqttUsername = mdmProperties.getString(MqttConstants.PROPERTY_MQTT_USERNAME);
         mqttPassword = mdmProperties.getString(MqttConstants.PROPERTY_MQTT_PASSWORD);
         topicPrefix = mdmProperties.getString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, MqttConstants.DEFAULT_MQTT_TOPIC_PREFIX);
+        int qosValue = mdmProperties.getInt(MqttConstants.PROPERTY_MQTT_QOS, MqttConstants.DEFAULT_MQTT_QOS.getValue());
+        mqttQos = MqttQos.fromValue(qosValue);
 
         readMdmConfigAdditionalProperties(mdmProperties);
     }
@@ -492,6 +510,23 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         {
             topicPrefixTextView.setText(topicPrefix);
         }
+    }
+
+    /**
+     * Sets up the QoS dropdown with the available QoS options.
+     */
+    private void setupQosDropdown()
+    {
+        String[] qosOptions = {
+                getString(R.string.qos_at_most_once),
+                getString(R.string.qos_at_least_once),
+                getString(R.string.qos_exactly_once)
+        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                R.layout.dropdown_menu_popup_item, qosOptions);
+        mqttQosDropdown.setAdapter(adapter);
+        mqttQosDropdown.setOnItemClickListener((parent, view, position, id) ->
+                mqttQos = MqttQos.fromValue(position));
     }
 
     /**
@@ -627,6 +662,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
             // here in case the variable was set via MDM config.
             edit.putString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, topicPrefix);
         }
+        edit.putInt(MqttConstants.PROPERTY_MQTT_QOS, mqttQos.getValue());
 
         storeAdditionalParameters(edit);
 
@@ -662,6 +698,9 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         final String restoredPrefix = preferences.getString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, MqttConstants.DEFAULT_MQTT_TOPIC_PREFIX);
         if (!restoredPrefix.isEmpty()) topicPrefix = restoredPrefix;
 
+        int qosValue = preferences.getInt(MqttConstants.PROPERTY_MQTT_QOS, MqttConstants.DEFAULT_MQTT_QOS.getValue());
+        mqttQos = MqttQos.fromValue(qosValue);
+
         restoreAdditionalParameters(preferences);
     }
 
@@ -675,7 +714,8 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      */
     protected BrokerConnectionInfo getBrokerConnectionInfo()
     {
-        return new BrokerConnectionInfo(host, portNumber, tlsEnabled, deviceName, mqttUsername, mqttPassword, topicPrefix);
+        return new BrokerConnectionInfo(host, portNumber, tlsEnabled, deviceName,
+                mqttUsername, mqttPassword, topicPrefix, mqttQos);
     }
 
     /**
@@ -708,6 +748,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         usernameEdit.setEnabled(editable);
         passwordEdit.setEnabled(editable);
         changePrefixButton.setEnabled(editable);
+        mqttQosTextInputLayout.setEnabled(editable);
     }
 
     /**

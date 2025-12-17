@@ -31,6 +31,11 @@
     <string name="topic_prefix_label">Topic Prefix:</string>
     <string name="hint_mqtt_topic_prefix">Enter MQTT Topic Prefix</string>
 
+    <string name="qos_label">QoS Level</string>
+    <string name="qos_at_most_once">At Most Once (0)</string>
+    <string name="qos_at_least_once">At Least Once (1)</string>
+    <string name="qos_exactly_once">Exactly Once (2)</string>
+
     <string name="scan_code">Auto Configure with QR code</string>
 
     <string name="mqtt_mdm_override_description">Your MQTT connection settings have been set by a Mobile Device Management server.  Toggle the switch below to override those settings so you can specify your own MQTT Broker connection information.</string>

@@ -12,9 +12,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.hivemq.client.internal.mqtt.lifecycle.mqtt3.Mqtt3ClientDisconnectedContextView;
-import com.hivemq.client.internal.mqtt.message.auth.MqttAuth;
-import com.hivemq.client.internal.mqtt.message.auth.MqttAuthBuilder;
-import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3Client;
@@ -61,6 +58,7 @@ public class DefaultMqttConnection
     private volatile boolean userCanceled = false;
     private volatile boolean disconnecting = false;
     private String topicPrefix;
+    private com.hivemq.client.mqtt.datatypes.MqttQos hiveMqttQos;
 
     protected DefaultMqttConnection()
     {
@@ -98,6 +96,8 @@ public class DefaultMqttConnection
             userCanceled = false;
             mqttClientId = connectionInfo.getMqttClientId();
             topicPrefix = connectionInfo.getTopicPrefix();
+            hiveMqttQos = com.hivemq.client.mqtt.datatypes.MqttQos.fromCode(
+                    connectionInfo.getMqttQos().getValue());
 
             final String username = connectionInfo.getMqttUsername();
             final String password = connectionInfo.getMqttPassword();
@@ -271,7 +271,11 @@ public class DefaultMqttConnection
     {
         if (mqtt3Client.getState().isConnectedOrReconnect())
         {
-            mqtt3Client.publishWith().topic(topicPrefix + mqttMessageTopic).qos(MqttQos.AT_LEAST_ONCE).payload(jsonMessage.getBytes()).send();
+            mqtt3Client.publishWith()
+                    .topic(topicPrefix + mqttMessageTopic)
+                    .qos(hiveMqttQos)
+                    .payload(jsonMessage.getBytes())
+                    .send();
         }
     }
 

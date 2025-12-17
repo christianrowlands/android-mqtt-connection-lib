@@ -1,5 +1,7 @@
 package com.craxiom.mqttlibrary.connection;
 
+import com.craxiom.mqttlibrary.MqttQos;
+
 import java.util.Objects;
 
 /**
@@ -19,6 +21,7 @@ public class BrokerConnectionInfo
     private final String mqttUsername;
     private final String mqttPassword;
     private final String topicPrefix;
+    private final MqttQos mqttQos;
 
     private final int hashCode;
 
@@ -32,10 +35,11 @@ public class BrokerConnectionInfo
      * @param mqttUsername   The username used to authenticate to the MQTT Broker.
      * @param mqttPassword   The password used to authenticate to the MQTT Broker.
      * @param topicPrefix    The prefix to use for all MQTT topics.
+     * @param mqttQos        The Quality of Service level to use for publishing messages. If null, defaults to AT_LEAST_ONCE (QoS 1).
      */
     public BrokerConnectionInfo(String mqttBrokerHost, int portNumber, boolean tlsEnabled,
                                 String mqttClientId, String mqttUsername, String mqttPassword,
-                                String topicPrefix)
+                                String topicPrefix, MqttQos mqttQos)
     {
         this.mqttBrokerHost = mqttBrokerHost;
         this.portNumber = portNumber;
@@ -48,6 +52,8 @@ public class BrokerConnectionInfo
         if (topicPrefix == null) topicPrefix = "";
         this.topicPrefix = topicPrefix;
 
+        this.mqttQos = mqttQos != null ? mqttQos : MqttQos.AT_LEAST_ONCE;
+
         int result = mqttBrokerHost != null ? mqttBrokerHost.hashCode() : 0;
         result = 31 * result + portNumber;
         result = 31 * result + (tlsEnabled ? 1 : 0);
@@ -55,6 +61,7 @@ public class BrokerConnectionInfo
         result = 31 * result + (mqttUsername != null ? mqttUsername.hashCode() : 0);
         result = 31 * result + (mqttPassword != null ? mqttPassword.hashCode() : 0);
         result = 31 * result + topicPrefix.hashCode();
+        result = 31 * result + this.mqttQos.hashCode();
         hashCode = result;
     }
 
@@ -72,7 +79,8 @@ public class BrokerConnectionInfo
         if (!Objects.equals(mqttClientId, that.mqttClientId)) return false;
         if (!Objects.equals(mqttUsername, that.mqttUsername)) return false;
         if (!Objects.equals(topicPrefix, that.topicPrefix)) return false;
-        return Objects.equals(mqttPassword, that.mqttPassword);
+        if (!Objects.equals(mqttPassword, that.mqttPassword)) return false;
+        return mqttQos == that.mqttQos;
     }
 
     @Override
@@ -114,6 +122,11 @@ public class BrokerConnectionInfo
     public String getTopicPrefix()
     {
         return topicPrefix;
+    }
+
+    public MqttQos getMqttQos()
+    {
+        return mqttQos;
     }
 
     /**

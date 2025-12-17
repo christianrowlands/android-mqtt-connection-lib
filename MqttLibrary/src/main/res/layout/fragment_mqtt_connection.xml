@@ -206,6 +206,24 @@
                 android:text="@string/change" />
         </LinearLayout>
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/mqttQosTextInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/small_margin"
+            android:hint="@string/qos_label">
+
+            <AutoCompleteTextView
+                android:id="@+id/mqttQosDropdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:focusable="false"
+                android:focusableInTouchMode="false" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
         <ViewStub
             android:id="@+id/additional_fields_view_stub"
             android:layout_width="match_parent"
