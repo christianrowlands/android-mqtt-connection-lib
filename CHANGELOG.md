@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.0.0) - 2025-12-17
+* Fix an edge case bug where an old unsuccessful connection attempt was being retried and causing the current connection to be disconnected.
+* Adds an MQTT QoS setting to the connection info and connection UI.
+* Remove the help card from the MQTT connection UI.
+* Update the protobuf, hive mqtt, and other libraries.
+* Update to AGP 8.13.2.
+
 ## [0.7.5](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v0.7.5) - 2025-02-12
 * Update the protobuf and hive mqtt libraries.
 
