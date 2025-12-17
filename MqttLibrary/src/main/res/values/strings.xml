@@ -23,7 +23,6 @@
     <string name="password_hint">MQTT Password</string>
     <string name="server_host_hint">Server Address</string>
     <string name="server_port_hint">Port Number</string>
-    <string name="help_title">Help?</string>
     <string name="tls">TLS</string>
 
     <string name="mqtt_topic_prefix_title">MQTT Topic Prefix</string>

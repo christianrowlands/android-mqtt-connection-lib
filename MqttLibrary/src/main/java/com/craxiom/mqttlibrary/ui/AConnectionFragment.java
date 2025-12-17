@@ -222,9 +222,6 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
 
         inflateAdditionalFieldsViewStub(inflater, view.findViewById(R.id.additional_fields_view_stub));
 
-        final CardView helpCardView = view.findViewById(R.id.help_card_view);
-        helpCardView.setOnClickListener(new HelpCardListener(view, R.string.mqtt_connection_description));
-
         restoreConnectionParameters();
 
         mdmConfigPresent = isMdmConfigPresent();
