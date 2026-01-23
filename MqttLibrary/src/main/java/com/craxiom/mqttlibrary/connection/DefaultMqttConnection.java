@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import com.craxiom.mqttlibrary.IConnectionStateListener;
 import com.craxiom.mqttlibrary.IMqttService;
+import com.craxiom.mqttlibrary.IQueueBackpressureListener;
 import com.craxiom.mqttlibrary.R;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
@@ -26,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import timber.log.Timber;
@@ -48,11 +51,17 @@ public class DefaultMqttConnection
 
     private final JsonFormat.Printer jsonFormatter;
     private final List<IConnectionStateListener> mqttConnectionListeners = new CopyOnWriteArrayList<>();
+    private final List<IQueueBackpressureListener> queueBackpressureListeners = new CopyOnWriteArrayList<>();
 
     private final Handler uiThreadHandler;
 
     private volatile ConnectionState connectionState = ConnectionState.DISCONNECTED;
     private Mqtt3AsyncClient mqtt3Client;
+
+    // Queue management for backpressure
+    private volatile int streamingQueueLimit = 0; // 0 = disabled (unbounded)
+    private final AtomicInteger pendingMessageCount = new AtomicInteger(0);
+    private final AtomicBoolean queueBackpressureActive = new AtomicBoolean(false);
 
     protected String mqttClientId;
     private CompletableFuture<Mqtt3ConnAck> connectFuture;
@@ -293,6 +302,9 @@ public class DefaultMqttConnection
 
     /**
      * Publishes the JSON string to the specified topic.
+     * <p>
+     * If a streaming queue limit is configured and the queue is full, the message will be dropped
+     * and a backpressure notification will be sent to listeners.
      *
      * @param mqttMessageTopic The MQTT topic to publish the message to. The {@link #topicPrefix} will be prepended to this.
      * @param jsonMessage      The JSON string to send to the MQTT broker.
@@ -300,14 +312,65 @@ public class DefaultMqttConnection
      */
     protected void publishMessage(String mqttMessageTopic, String jsonMessage)
     {
-        if (mqtt3Client.getState().isConnectedOrReconnect())
+        if (!mqtt3Client.getState().isConnectedOrReconnect())
+        {
+            return;
+        }
+
+        // If queue limit is disabled (0), use the original fire-and-forget behavior
+        if (streamingQueueLimit <= 0)
         {
             mqtt3Client.publishWith()
                     .topic(topicPrefix + mqttMessageTopic)
                     .qos(hiveMqttQos)
                     .payload(jsonMessage.getBytes())
                     .send();
+            return;
         }
+
+        // Queue limit is enabled - use increment-first pattern to avoid race conditions
+        // where multiple threads pass the check before any increment
+        final int newPending = pendingMessageCount.incrementAndGet();
+        if (newPending > streamingQueueLimit)
+        {
+            // Queue is over limit - decrement and apply backpressure
+            pendingMessageCount.decrementAndGet();
+            // Notify listeners if this is a new backpressure event
+            if (!queueBackpressureActive.getAndSet(true))
+            {
+                Timber.w("MQTT streaming queue full (%d > %d), signaling to pause scanning",
+                        newPending - 1, streamingQueueLimit);
+                notifyQueueFull(newPending - 1, streamingQueueLimit);
+            }
+            // Drop the message - scanning should be paused by now
+            return;
+        }
+
+        // Proceed with publishing - count already incremented
+        mqtt3Client.publishWith()
+                .topic(topicPrefix + mqttMessageTopic)
+                .qos(hiveMqttQos)
+                .payload(jsonMessage.getBytes())
+                .send()
+                .whenComplete((result, error) -> {
+                    final int remaining = pendingMessageCount.decrementAndGet();
+
+                    // Resume scanning when queue drains to half the limit
+                    if (queueBackpressureActive.get() && remaining < streamingQueueLimit / 2)
+                    {
+                        if (queueBackpressureActive.getAndSet(false))
+                        {
+                            Timber.i("MQTT streaming queue drained (%d < %d/2), resuming scanning",
+                                    remaining, streamingQueueLimit);
+                            notifyQueueDrained(remaining, streamingQueueLimit);
+                        }
+                    }
+
+                    if (error != null)
+                    {
+                        Timber.w(error, "Error publishing MQTT message");
+                    }
+                });
     }
 
     /**
@@ -328,6 +391,124 @@ public class DefaultMqttConnection
     public void unregisterMqttConnectionStateListener(IConnectionStateListener connectionStateListener)
     {
         mqttConnectionListeners.remove(connectionStateListener);
+    }
+
+    /**
+     * Sets the maximum number of pending messages allowed in the queue before backpressure is applied.
+     * <p>
+     * When the queue reaches this limit, new messages will be dropped and listeners will be notified
+     * to pause scanning. When the queue drains to half the limit, listeners will be notified to resume.
+     *
+     * @param limit The maximum queue size. Set to 0 to disable queue limiting (unbounded queue).
+     * @since 1.1.0
+     */
+    public void setStreamingQueueLimit(int limit)
+    {
+        streamingQueueLimit = Math.max(0, limit);
+        Timber.d("MQTT streaming queue limit set to %d", streamingQueueLimit);
+
+        // If we're reducing the limit and currently in backpressure, check if we should still be
+        if (limit > 0 && queueBackpressureActive.get())
+        {
+            final int currentPending = pendingMessageCount.get();
+            if (currentPending < limit / 2)
+            {
+                // Queue has already drained below the new threshold
+                if (queueBackpressureActive.getAndSet(false))
+                {
+                    notifyQueueDrained(currentPending, limit);
+                }
+            }
+        }
+    }
+
+    /**
+     * Gets the current streaming queue limit.
+     *
+     * @return The queue limit, or 0 if unlimited.
+     * @since 1.1.0
+     */
+    public int getStreamingQueueLimit()
+    {
+        return streamingQueueLimit;
+    }
+
+    /**
+     * Gets the current number of pending messages in the queue.
+     *
+     * @return The number of messages waiting to be sent.
+     * @since 1.1.0
+     */
+    public int getPendingMessageCount()
+    {
+        return pendingMessageCount.get();
+    }
+
+    /**
+     * Checks if queue backpressure is currently active.
+     *
+     * @return true if scanning should be paused due to queue backpressure.
+     * @since 1.1.0
+     */
+    public boolean isQueueBackpressureActive()
+    {
+        return queueBackpressureActive.get();
+    }
+
+    /**
+     * Registers a listener to receive queue backpressure notifications.
+     *
+     * @param listener The listener to add.
+     * @since 1.1.0
+     */
+    public void registerQueueBackpressureListener(IQueueBackpressureListener listener)
+    {
+        queueBackpressureListeners.add(listener);
+    }
+
+    /**
+     * Removes a queue backpressure listener.
+     *
+     * @param listener The listener to remove.
+     * @since 1.1.0
+     */
+    public void unregisterQueueBackpressureListener(IQueueBackpressureListener listener)
+    {
+        queueBackpressureListeners.remove(listener);
+    }
+
+    /**
+     * Notifies all registered listeners that the queue is full and scanning should pause.
+     */
+    private void notifyQueueFull(int queueSize, int queueLimit)
+    {
+        for (IQueueBackpressureListener listener : queueBackpressureListeners)
+        {
+            try
+            {
+                listener.onQueueFull(queueSize, queueLimit);
+            } catch (Exception e)
+            {
+                Timber.e(e, "Error notifying queue backpressure listener of queue full");
+            }
+        }
+    }
+
+    /**
+     * Notifies all registered listeners that the queue has drained and scanning can resume.
+     */
+    private void notifyQueueDrained(int queueSize, int queueLimit)
+    {
+        for (IQueueBackpressureListener listener : queueBackpressureListeners)
+        {
+            try
+            {
+                listener.onQueueDrained(queueSize, queueLimit);
+            } catch (Exception e)
+            {
+                Timber.e(e, "Error notifying queue backpressure listener of queue drained");
+            }
+        }
     }
 
     /**
