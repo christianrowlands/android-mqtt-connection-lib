@@ -67,6 +67,15 @@ public class DefaultMqttConnection
     private CompletableFuture<Mqtt3ConnAck> connectFuture;
     private volatile boolean userCanceled = false;
     private volatile boolean disconnecting = false;
+
+    /**
+     * Tracks whether the MQTT client has successfully connected at least once. This prevents
+     * attempting to publish messages to HiveMQ before the first successful connection, which
+     * can cause blocking behavior due to HiveMQ Issue #612 where operations on a client that
+     * has never connected can result in CompletableFutures that never complete.
+     */
+    private volatile boolean hasConnectedOnce = false;
+
     /**
      * Generation counter to track client instances. Incremented each time a new client is created.
      * Listeners capture the generation at creation time and ignore events if generation doesn't match.
@@ -97,6 +106,7 @@ public class DefaultMqttConnection
         {
             // Increment generation FIRST to invalidate any callbacks from old client
             final long thisGeneration = clientGeneration.incrementAndGet();
+            hasConnectedOnce = false;
             Timber.d("Creating new MQTT client with generation %d", thisGeneration);
 
             if (mqtt3Client != null && mqtt3Client.getState().isConnectedOrReconnect())
@@ -163,6 +173,7 @@ public class DefaultMqttConnection
                         } else
                         {
                             Timber.i("MQTT Broker Connected!!!!");
+                            hasConnectedOnce = true;
                             notifyConnectionStateChange(ConnectionState.CONNECTED);
                         }
                     })
@@ -312,7 +323,11 @@ public class DefaultMqttConnection
      */
     protected void publishMessage(String mqttMessageTopic, String jsonMessage)
     {
-        if (!mqtt3Client.getState().isConnectedOrReconnect())
+        // Don't attempt to publish until we've connected at least once.
+        // This prevents the HiveMQ blocking bug (Issue #612) where publishing to a client
+        // that has never successfully connected can result in CompletableFutures that never
+        // complete, causing blocking behavior and UI freezes.
+        if (!hasConnectedOnce || !mqtt3Client.getState().isConnectedOrReconnect())
         {
             return;
         }
