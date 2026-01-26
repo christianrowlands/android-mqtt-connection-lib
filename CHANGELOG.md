@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.1.0) - 2026-01-26
+* Adds back pressure support to the MQTT queue with the ability to set the max queue size and a listener interface for notifications of back pressure events.
+* Prevent an edge case bug where the hive client blocks the message processing thread because the hive client has not successfully connected to the MQTT broker at least once. See https://github.com/hivemq/hivemq-mqtt-client/issues/612 for more details.
+
 ## [1.0.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.0.0) - 2025-12-17
 * Fix an edge case bug where an old unsuccessful connection attempt was being retried and causing the current connection to be disconnected.
 * Adds an MQTT QoS setting to the connection info and connection UI.
