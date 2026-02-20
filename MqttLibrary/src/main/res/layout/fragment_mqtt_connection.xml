@@ -32,7 +32,7 @@
                     android:text="@string/mqtt_mdm_override_description"
                     android:textAppearance="@style/DescriptionText" />
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/mdm_override_toggle_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -110,7 +110,7 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <androidx.appcompat.widget.SwitchCompat
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/tlsToggleSwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -252,7 +252,7 @@
                     android:gravity="center_vertical"
                     android:layout_gravity="center_vertical" />
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/mqttConnectToggleSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

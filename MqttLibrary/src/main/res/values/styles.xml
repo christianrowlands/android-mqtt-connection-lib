@@ -13,7 +13,11 @@
     </style>
 
     <style name="ConnectionSwitchStyle">
-        <item name="colorControlActivated">@color/colorCardDark</item>
+        <item name="materialThemeOverlay">@style/ThemeOverlay.ConnectionSwitch</item>
+    </style>
+
+    <style name="ThemeOverlay.ConnectionSwitch" parent="">
+        <item name="colorPrimary">@color/colorCardDark</item>
     </style>
 
     <style name="LabelText" parent="TextAppearance.AppCompat">

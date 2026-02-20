@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.2.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.2.0) - 2026-02-20
+* Replace SwitchCompat with the newer MaterialSwitch to enable supporting more devices (prevents a crash on certain older devices
+
 ## [1.1.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.1.0) - 2026-01-26
 * Adds back pressure support to the MQTT queue with the ability to set the max queue size and a listener interface for notifications of back pressure events.
 * Prevent an edge case bug where the hive client blocks the message processing thread because the hive client has not successfully connected to the MQTT broker at least once. See https://github.com/hivemq/hivemq-mqtt-client/issues/612 for more details.

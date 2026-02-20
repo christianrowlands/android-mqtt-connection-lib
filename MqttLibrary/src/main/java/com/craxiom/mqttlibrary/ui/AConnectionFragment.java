@@ -30,7 +30,6 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -44,6 +43,7 @@ import com.craxiom.mqttlibrary.MqttQos;
 import com.craxiom.mqttlibrary.R;
 import com.craxiom.mqttlibrary.connection.BrokerConnectionInfo;
 import com.craxiom.mqttlibrary.connection.ConnectionState;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputLayout;
 
 import timber.log.Timber;
@@ -67,13 +67,13 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
 
     protected IMqttService service;
 
-    private SwitchCompat mdmOverrideToggleSwitch;
+    private MaterialSwitch mdmOverrideToggleSwitch;
     private CardView connectionStatusCardView;
     private TextView connectionStatusText;
-    private SwitchCompat mqttConnectionToggleSwitch;
+    private MaterialSwitch mqttConnectionToggleSwitch;
     protected EditText mqttHostAddressEdit;
     protected EditText mqttPortNumberEdit;
-    protected SwitchCompat tlsToggleSwitch;
+    protected MaterialSwitch tlsToggleSwitch;
     protected EditText deviceNameEdit;
     protected EditText usernameEdit;
     protected EditText passwordEdit;
