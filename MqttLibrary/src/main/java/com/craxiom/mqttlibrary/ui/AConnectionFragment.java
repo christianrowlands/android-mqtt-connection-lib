@@ -37,6 +37,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 
 import com.craxiom.mqttlibrary.IConnectionStateListener;
+import com.craxiom.mqttlibrary.ICredentialStorage;
 import com.craxiom.mqttlibrary.IMqttService;
 import com.craxiom.mqttlibrary.MqttConstants;
 import com.craxiom.mqttlibrary.MqttQos;
@@ -170,6 +171,23 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      * @param preferences The Shared Preferences to restore from.
      */
     protected abstract void restoreAdditionalParameters(SharedPreferences preferences);
+
+    /**
+     * Override this method to provide a custom credential storage implementation.
+     * When this returns non-null, the fragment will delegate username and password
+     * storage/retrieval to the returned {@link ICredentialStorage} instead of
+     * using SharedPreferences.
+     * <p>
+     * The default implementation returns {@code null}, which preserves the existing
+     * behavior of storing credentials in SharedPreferences.
+     *
+     * @return An {@link ICredentialStorage} implementation, or {@code null} to use SharedPreferences.
+     * @since 1.3.0
+     */
+    protected ICredentialStorage getCredentialStorage()
+    {
+        return null;
+    }
 
     /**
      * Update the UI fields from the instance variables in this class. Override this method to
@@ -645,13 +663,20 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         {
             edit.putString(MqttConstants.PROPERTY_MQTT_CLIENT_ID, deviceName);
         }
-        if (mqttUsername != null)
+        ICredentialStorage credentialStorage = getCredentialStorage();
+        if (credentialStorage != null)
         {
-            edit.putString(MqttConstants.PROPERTY_MQTT_USERNAME, mqttUsername);
-        }
-        if (mqttPassword != null)
+            credentialStorage.storeCredentials(mqttUsername, mqttPassword);
+        } else
         {
-            edit.putString(MqttConstants.PROPERTY_MQTT_PASSWORD, mqttPassword);
+            if (mqttUsername != null)
+            {
+                edit.putString(MqttConstants.PROPERTY_MQTT_USERNAME, mqttUsername);
+            }
+            if (mqttPassword != null)
+            {
+                edit.putString(MqttConstants.PROPERTY_MQTT_PASSWORD, mqttPassword);
+            }
         }
         if (topicPrefix != null)
         {
@@ -686,11 +711,22 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
         final String restoredDeviceName = preferences.getString(MqttConstants.PROPERTY_MQTT_CLIENT_ID, "");
         if (!restoredDeviceName.isEmpty()) deviceName = restoredDeviceName;
 
-        final String restoredUsername = preferences.getString(MqttConstants.PROPERTY_MQTT_USERNAME, "");
-        if (!restoredUsername.isEmpty()) mqttUsername = restoredUsername;
+        ICredentialStorage credentialStorage = getCredentialStorage();
+        if (credentialStorage != null)
+        {
+            final String restoredUsername = credentialStorage.getUsername();
+            if (restoredUsername != null && !restoredUsername.isEmpty()) mqttUsername = restoredUsername;
 
-        final String restoredPassword = preferences.getString(MqttConstants.PROPERTY_MQTT_PASSWORD, "");
-        if (!restoredPassword.isEmpty()) mqttPassword = restoredPassword;
+            final String restoredPassword = credentialStorage.getPassword();
+            if (restoredPassword != null && !restoredPassword.isEmpty()) mqttPassword = restoredPassword;
+        } else
+        {
+            final String restoredUsername = preferences.getString(MqttConstants.PROPERTY_MQTT_USERNAME, "");
+            if (!restoredUsername.isEmpty()) mqttUsername = restoredUsername;
+
+            final String restoredPassword = preferences.getString(MqttConstants.PROPERTY_MQTT_PASSWORD, "");
+            if (!restoredPassword.isEmpty()) mqttPassword = restoredPassword;
+        }
 
         final String restoredPrefix = preferences.getString(MqttConstants.PROPERTY_MQTT_TOPIC_PREFIX, MqttConstants.DEFAULT_MQTT_TOPIC_PREFIX);
         if (!restoredPrefix.isEmpty()) topicPrefix = restoredPrefix;
