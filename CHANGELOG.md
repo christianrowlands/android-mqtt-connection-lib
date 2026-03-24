@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.3.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.3.0) - 2026-03-24
+* Add a credential storage interface to allow the implementer of the MQTT connection to decide how they want to store the MQTT credentials.
+
 ## [1.2.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.2.0) - 2026-02-20
 * Replace SwitchCompat with the newer MaterialSwitch to enable supporting more devices (prevents a crash on certain older devices).
 
