@@ -11,7 +11,8 @@ import com.craxiom.mqttlibrary.connection.ConnectionState;
 public interface IConnectionStateListener
 {
     /**
-     * Called when the Connection State changes.
+     * Called when the Connection State changes, on the thread that changed it: the caller of
+     * connect or disconnect, or one of the MQTT client's threads. Don't block in it.
      *
      * @param newConnectionState the new Connection State.
      */

@@ -41,8 +41,8 @@ import com.craxiom.mqttlibrary.ICredentialStorage;
 import com.craxiom.mqttlibrary.IMqttService;
 import com.craxiom.mqttlibrary.MqttConstants;
 import com.craxiom.mqttlibrary.MqttQos;
-import com.craxiom.mqttlibrary.R;
 import com.craxiom.mqttlibrary.connection.BrokerConnectionInfo;
+import com.craxiom.mqttlibrary.connection.ConnectionFailure;
 import com.craxiom.mqttlibrary.connection.ConnectionState;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputLayout;
@@ -59,7 +59,7 @@ import timber.log.Timber;
  */
 public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceBinder> extends Fragment implements IConnectionStateListener
 {
-    protected final SurveyServiceConnection surveyServiceConnection = new SurveyServiceConnection();
+    protected final MqttServiceConnection surveyServiceConnection = new MqttServiceConnection();
 
     private static final int ACCESS_PERMISSION_REQUEST_ID = 10;
 
@@ -117,7 +117,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      *     viewStub.setLayoutResource(R.layout.fragment_stream_options);
      *
      *     View inflatedStub = viewStub.inflate();
-     *     cellularStreamToggleSwitch = inflatedStub.findViewById(R.id.streamCellularToggleSwitch);
+     *     exampleStreamToggleSwitch = inflatedStub.findViewById(R.id.exampleStreamToggleSwitch);
      * </pre>
      *
      * @param inflater The layout inflater.
@@ -130,7 +130,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      * <p>
      * Typical method content looks like this:
      * <pre>
-     *     cellularStreamEnabled = mdmProperties.getBoolean(NetworkSurveyConstants.PROPERTY_MQTT_CELLULAR_STREAM_ENABLED, NetworkSurveyConstants.DEFAULT_MQTT_CELLULAR_STREAM_SETTING);
+     *     exampleStreamEnabled = mdmProperties.getBoolean(PROPERTY_EXAMPLE_STREAM_ENABLED, DEFAULT_EXAMPLE_STREAM_SETTING);
      * </pre>
      *
      * @param mdmProperties The MDM bundle.
@@ -142,7 +142,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      * <p>
      * Typical method content looks like this:
      * <pre>
-     *     editor.putBoolean(NetworkSurveyConstants.PROPERTY_MQTT_CELLULAR_STREAM_ENABLED, cellularStreamEnabled);
+     *     editor.putBoolean(PROPERTY_EXAMPLE_STREAM_ENABLED, exampleStreamEnabled);
      * </pre>
      *
      * @param edit The SharedPreferences editor.
@@ -155,7 +155,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      * <p>
      * Typical method content looks like this:
      * <pre>
-     *     cellularStreamEnabled = cellularStreamToggleSwitch.isChecked();
+     *     exampleStreamEnabled = exampleStreamToggleSwitch.isChecked();
      * </pre>
      */
     protected abstract void readUIAdditionalFields();
@@ -165,7 +165,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
      * <p>
      * Typical method content looks like this:
      * <pre>
-     *     cellularStreamEnabled = sharedPreferences.getBoolean(NetworkSurveyConstants.PROPERTY_MQTT_CELLULAR_STREAM_ENABLED, NetworkSurveyConstants.DEFAULT_MQTT_CELLULAR_STREAM_SETTING);
+     *     exampleStreamEnabled = preferences.getBoolean(PROPERTY_EXAMPLE_STREAM_ENABLED, DEFAULT_EXAMPLE_STREAM_SETTING);
      * </pre>
      *
      * @param preferences The Shared Preferences to restore from.
@@ -319,6 +319,13 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     public void onConnectionStateChange(ConnectionState newConnectionState)
     {
         uiThreadHandler.post(() -> updateUiState(newConnectionState));
+
+        final IMqttService mqttService = service;
+        if (newConnectionState == ConnectionState.DISCONNECTED && mqttService != null
+                && mqttService.getMqttConnectionFailure() == ConnectionFailure.SIGN_IN_REJECTED)
+        {
+            showToast(R.string.connection_error_invalid_credentials);
+        }
     }
 
     /**
@@ -558,7 +565,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
             if (!areConnectionParametersValid())
             {
                 updateUiState(ConnectionState.DISCONNECTED);
-                Timber.w("Can't connect because one ore more of the connection parameters are invalid");
+                Timber.w("Can't connect because one or more of the connection parameters are invalid");
                 return;
             }
 
@@ -589,10 +596,8 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     /**
      * Validates the user-specified server connection parameters.
      * <p>
-     * For the host name, all non empty strings are 'valid'.
-     * For the port number, all numeric numbers between 0 and 65535 are 'valid'.
-     * For the device name, it must not be empty.
-     * For the message streaming options, at least one must be toggled on.
+     * The host name and the client ID must not be empty, and the port number must be between 1 and
+     * 65535.
      *
      * @return True if all parameters are valid according to the above criteria.
      */
@@ -600,35 +605,42 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     {
         if (mqttHostAddressEdit.getText().toString().isEmpty())
         {
-            final String hostEmptyMessage = "Host address must be specified";
-            uiThreadHandler.post(() -> Toast.makeText(applicationContext, hostEmptyMessage, Toast.LENGTH_SHORT).show());
+            showToast(R.string.connection_error_host_empty);
             return false;
         }
 
         if (deviceNameEdit.getText().toString().isEmpty())
         {
-            final String deviceNameEmptyMessage = "A client ID must be specified";
-            uiThreadHandler.post(() -> Toast.makeText(applicationContext, deviceNameEmptyMessage, Toast.LENGTH_SHORT).show());
+            showToast(R.string.connection_error_client_id_empty);
             return false;
         }
 
         try
         {
             final int portNumber = Integer.parseInt(mqttPortNumberEdit.getText().toString());
-            if (portNumber < 0 || portNumber > 65535)
+            if (portNumber < 1 || portNumber > 65535)
             {
-                final String invalidPortNumberMessage = "Port number must be between 0 and 65535";
-                uiThreadHandler.post(() -> Toast.makeText(applicationContext, invalidPortNumberMessage, Toast.LENGTH_SHORT).show());
+                showToast(R.string.connection_error_port_out_of_range);
                 return false;
             }
         } catch (Exception e)
         {
-            final String portNotANumberMessage = "Port must be a number";
-            uiThreadHandler.post(() -> Toast.makeText(applicationContext, portNotANumberMessage, Toast.LENGTH_SHORT).show());
+            showToast(R.string.connection_error_port_not_a_number);
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Shows a short Toast with the given message on the UI thread.
+     */
+    private void showToast(int messageId)
+    {
+        uiThreadHandler.post(() -> {
+            final Context context = applicationContext;
+            if (context != null) Toast.makeText(context, messageId, Toast.LENGTH_SHORT).show();
+        });
     }
 
     /**
@@ -862,7 +874,7 @@ public abstract class AConnectionFragment<T extends AConnectionFragment.ServiceB
     /**
      * A {@link ServiceConnection} implementation for binding to the {@link #service}.
      */
-    private class SurveyServiceConnection implements ServiceConnection
+    private class MqttServiceConnection implements ServiceConnection
     {
         @Override
         public void onServiceConnected(final ComponentName name, final IBinder binder)

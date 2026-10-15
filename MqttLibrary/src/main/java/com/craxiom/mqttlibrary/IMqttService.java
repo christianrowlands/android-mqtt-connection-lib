@@ -1,6 +1,9 @@
 package com.craxiom.mqttlibrary;
 
+import androidx.annotation.Nullable;
+
 import com.craxiom.mqttlibrary.connection.BrokerConnectionInfo;
+import com.craxiom.mqttlibrary.connection.ConnectionFailure;
 import com.craxiom.mqttlibrary.connection.ConnectionState;
 
 /**
@@ -52,4 +55,16 @@ public interface IMqttService
      * @return The current connection state to the MQTT Broker.
      */
     ConnectionState getMqttConnectionState();
+
+    /**
+     * @return Why the latest MQTT connection attempt failed, or null if it hasn't. A service that
+     * holds a {@link com.craxiom.mqttlibrary.connection.DefaultMqttConnection} returns its
+     * {@code getLastFailure()}.
+     * @since 2.0.0
+     */
+    @Nullable
+    default ConnectionFailure getMqttConnectionFailure()
+    {
+        return null;
+    }
 }

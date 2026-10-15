@@ -5,6 +5,9 @@ package com.craxiom.mqttlibrary;
  * <p>
  * When the message queue reaches its configured limit, scanning operations should be paused
  * to prevent out-of-memory crashes. When the queue drains sufficiently, scanning can resume.
+ * <p>
+ * Called on the thread that publishes a message or on one of the MQTT client's threads, so don't
+ * block in it.
  *
  * @since 1.1.0
  */

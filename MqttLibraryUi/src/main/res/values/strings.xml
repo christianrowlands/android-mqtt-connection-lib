@@ -5,9 +5,6 @@
     <string name="status_connected">Connected</string>
     <string name="status_disconnecting">Disconnecting …</string>
 
-    <string name="connection_error_invalid_credentials">Error: Invalid username or password</string>
-    <string name="connection_error_server_unavailable">Error: Server unavailable, check the Server Address for typos</string>
-
     <string name="client_id_hint">Client ID</string>
     <string name="username_hint">MQTT Username</string>
     <string name="password_hint">MQTT Password</string>
@@ -33,4 +30,10 @@
     <string name="mqtt_mdm_override_summary_on">MDM control is on, but now some of the MDM settings can be overridden</string>
     <string name="mqtt_mdm_override_summary_off">MDM control is on</string>
     <string name="change">Change</string>
+
+    <string name="connection_error_invalid_credentials">Error: Invalid username or password</string>
+    <string name="connection_error_host_empty">Host address must be specified</string>
+    <string name="connection_error_client_id_empty">A client ID must be specified</string>
+    <string name="connection_error_port_out_of_range">Port number must be between 1 and 65535</string>
+    <string name="connection_error_port_not_a_number">Port must be a number</string>
 </resources>

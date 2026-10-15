@@ -24,12 +24,12 @@ jobs:
         run: |
           # Update build.gradle with new version
           echo "${{ github.event.inputs.version }}"
-          sed -i "s/version \"[^\"]*\"/version \"${{ github.event.inputs.version }}\"/g" MqttLibrary/build.gradle
+          sed -i "s/version = '[^']*'/version = '${{ github.event.inputs.version }}'/" build.gradle
 
       - name: Set version in README example
         run: |
           echo "${{ github.event.inputs.version }}"
-          sed -i "s/implementation 'com.craxiom:mqttlibrary:[^\"]*\'/implementation 'com.craxiom:mqttlibrary:${{ github.event.inputs.version }}\'/g" README.md
+          sed -i -E "s/(com\.craxiom:mqtt-library(-ui)?):[^']*/\1:${{ github.event.inputs.version }}/g" README.md
 
       - name: Commit and push changes
         run: |

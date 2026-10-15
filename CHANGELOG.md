@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v2.0.0) - 2026-10-15
+* **Breaking:** the library is split into two artifacts. `mqtt-library` is now only the connection (`DefaultMqttConnection`, `BrokerConnectionInfo`, `ConnectionState`, `IMqttService`, `MqttConstants`, `MqttQos` and the listener interfaces), with no UI and no AppCompat or Material dependency. The connection fragment (`AConnectionFragment`, `DefaultConnectionFragment`), `ICredentialStorage`, and the layouts and UI resources move to the new `mqtt-library-ui` artifact, which depends on `mqtt-library`. Package names are unchanged, so an app that uses the fragment only adds `implementation 'com.craxiom:mqtt-library-ui:2.0.0'`. The UI resources now live in the `com.craxiom.mqttlibrary.ui` namespace.
+* **Breaking:** the `-debug` artifacts are no longer published.
+* **Breaking:** `mqtt-library` no longer shows a Toast when the broker refuses the user name or password. Read `getLastFailure()` instead; the fragment in `mqtt-library-ui` still shows the message. The `Context` passed to `connect()` is no longer used.
+* The connection now reports CONNECTING as soon as a connection attempt starts, and DISCONNECTING when a disconnect is requested.
+* Messages published before the first successful connection are now held and sent, in order, once the broker connects, instead of being thrown away. They are bounded by the streaming queue limit, or by `DEFAULT_HOLD_LIMIT` (20,000) when no limit is set; when full, new messages are dropped and the backpressure listeners are told, as for the streaming queue. Turning the connection off discards them.
+* `getPendingMessageCount()` now counts every message waiting to be sent, including held ones, whether or not a queue limit is set.
+* New `hasConnectedOnce()`, `getDroppedMessageCount()` and `getLastFailure()`. The new `ConnectionFailure` enum says why the latest attempt failed: `SIGN_IN_REJECTED` (the broker refused the user name or password; no more retries), `UNREACHABLE` (retrying on its own) or `INVALID_SETTINGS` (the connection could not be created, for example an empty host or a `#` or `+` in the topic prefix; no retries).
+* `IMqttService` has a new default method, `getMqttConnectionFailure()`, so the fragment can tell why a connection failed.
+* Fixed: moving to another broker (disconnect, then connect) could end in DISCONNECTED once the old connection finished closing.
+* Fixed: messages stuck in a client that was replaced no longer count as pending for the next connection.
+* `protobuf-java-util` is now an `api` dependency of `mqtt-library`, and AppCompat and Material are `api` dependencies of `mqtt-library-ui`.
+
 ## [1.3.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v1.3.0) - 2026-03-24
 * Add a credential storage interface to allow the implementer of the MQTT connection to decide how they want to store the MQTT credentials.
 

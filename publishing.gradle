@@ -1,0 +1,101 @@
+// Shared Maven Central publishing for the library modules.
+//
+// Each module applies the 'maven-publish', 'signing' and 'nu.studer.credentials' plugins, sets
+// ext.pomArtifactId, ext.pomName and ext.pomDescription, and then applies this file.
+//
+// The user must have run the following commands to be able to publish a version to Sonatype Maven Central:
+//   gradle addCredentials --key sonatypeUsername --value <username>
+//   gradle addCredentials --key sonatypePassword --value <password>
+//   gradle addCredentials --key sonatypeKeyPassword --value <password>
+//
+// You also need to have gpg installed for the signing process to work
+//
+// From there, execute `./gradlew clean build publishReleasePublicationToMavenRepository` to build, sign, and upload all the artifacts.
+// The artifacts are then uploaded to the Central Publisher Portal via the OSSRH Staging API.
+// The final step is to log in to https://central.sonatype.com/publishing/deployments to publish the validated deployment
+//
+// `./gradlew publishToMavenLocal` needs no credentials; signing is only required for the Sonatype upload.
+
+ext {
+    sonatypeUsername = project.credentials.forKey('sonatypeUsername')
+    sonatypePassword = project.credentials.forKey('sonatypePassword')
+    ext."signing.password" = project.credentials.forKey('sonatypeKeyPassword')
+}
+
+android {
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
+
+// Because the components are created only during the afterEvaluate phase, you must
+// configure your publications using the afterEvaluate() lifecycle method.
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                // Applies the component for the release build variant.
+                from components.release
+
+                artifactId project.ext.pomArtifactId
+
+                pom {
+                    name = project.ext.pomName
+                    description = project.ext.pomDescription
+                    url = 'https://github.com/christianrowlands/android-mqtt-connection-lib'
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/blob/master/LICENSE'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'christianrowlands'
+                            name = 'Christian Rowlands'
+                            email = 'christian.rowlands@gmail.com'
+                        }
+                        developer {
+                            id = 'eliza-mae-alcaraz'
+                            name = 'Eliza Alcaraz'
+                        }
+                    }
+
+                    scm {
+                        url = 'https://github.com/christianrowlands/android-mqtt-connection-lib'
+                        connection = 'scm:git:git://github.com/christianrowlands/android-mqtt-connection-lib.git'
+                        developerConnection = 'scm:git:ssh://git@github.com:christianrowlands/android-mqtt-connection-lib.git'
+                    }
+
+                    issueManagement {
+                        system = 'GitHub'
+                        url = 'https://github.com/christianrowlands/android-mqtt-connection-lib/issues'
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                def releasesRepoUrl = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
+                def snapshotsRepoUrl = "https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                credentials {
+                    username sonatypeUsername
+                    password sonatypePassword
+                }
+            }
+            mavenLocal()
+        }
+    }
+
+    signing {
+        // Only the Sonatype upload has to be signed, so publishToMavenLocal works without the key.
+        required { gradle.taskGraph.allTasks.any { it.name.endsWith('ToMavenRepository') } }
+        sign publishing.publications
+    }
+}
