@@ -1,5 +1,8 @@
 # Changelog
 
+## [2.0.1](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v2.0.1) - 2026-10-27
+* Fixed: messages waiting to be sent while the connection was down were thrown away when the broker came back without the client's session (a broker restart without persistence, an evicted session, or another node of a load-balanced cluster). They are now sent again once the client reconnects.
+
 ## [2.0.0](https://github.com/christianrowlands/android-mqtt-connection-lib/releases/tag/v2.0.0) - 2026-10-15
 * **Breaking:** the library is split into two artifacts. `mqtt-library` is now only the connection (`DefaultMqttConnection`, `BrokerConnectionInfo`, `ConnectionState`, `IMqttService`, `MqttConstants`, `MqttQos` and the listener interfaces), with no UI and no AppCompat or Material dependency. The connection fragment (`AConnectionFragment`, `DefaultConnectionFragment`), `ICredentialStorage`, and the layouts and UI resources move to the new `mqtt-library-ui` artifact, which depends on `mqtt-library`. Package names are unchanged, so an app that uses the fragment only adds `implementation 'com.craxiom:mqtt-library-ui:2.0.0'`. The UI resources now live in the `com.craxiom.mqttlibrary.ui` namespace.
 * **Breaking:** the `-debug` artifacts are no longer published.

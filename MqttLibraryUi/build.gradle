@@ -20,7 +20,7 @@ android {
     defaultConfig {
         minSdkVersion 26
         targetSdkVersion 36
-        versionCode 14
+        versionCode 15
         versionName version
 
         setProperty("archivesBaseName", "mqtt-library-ui-$versionName")

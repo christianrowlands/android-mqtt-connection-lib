@@ -481,6 +481,10 @@ public class DefaultMqttConnection
             notifyConnectionStateChange(ConnectionState.DISCONNECTED);
         } else
         {
+            // If the broker comes back without our session (a restart without persistence, an
+            // evicted session, another node of a cluster), HiveMQ would fail every queued and
+            // unacknowledged publish with MqttSessionExpiredException. Send them again instead.
+            context.getReconnector().republishIfSessionExpired(true);
             lastFailure = ConnectionFailure.UNREACHABLE;
             notifyConnectionStateChange(ConnectionState.CONNECTING);
         }
