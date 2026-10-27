@@ -11,8 +11,8 @@ It is published as two artifacts:
 It is important to note that the pieces provided in the library cannot stand on their own. Most classes are to be extended or implemented, as an "MQTT Connection" relies on a service that drives the logic using the connection. We will go over the correct way to wire everything together below.
 1. Ensure that the correct version of the library is included in the consuming project's `build.gradle` file, under its dependencies. An app that provides its own UI only needs the first line:<br><br>
    ```
-   implementation 'com.craxiom:mqtt-library:2.0.0'
-   implementation 'com.craxiom:mqtt-library-ui:2.0.0'
+   implementation 'com.craxiom:mqtt-library:2.0.1'
+   implementation 'com.craxiom:mqtt-library-ui:2.0.1'
    ```
 2. Next, for the connection UI (from `mqtt-library-ui`), the `fragment_mqtt_connection` is readily available under `res/layout`; however, `AConnectionFragment` must still be extended, or `DefaultConnectionFragment`.<br>Note: Users can extend the latter if they do not wish to add extra UI components. Otherwise, extend `AConnectionFragment`, which contains methods marked with "additional" in their names and <i>must</i> be overridden in the child class.<br>
   &ensp; a. Whichever fragment ends up being extended, it will require a binder parameter. This binder should extend the provided `AConnectionFragment#ServiceBinder` in order to be recognized. Likely, this binder will be located in the `IMqttService` implementation of the consuming project.
